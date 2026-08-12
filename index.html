@@ -185,7 +185,7 @@
 </head>
 <body>
 
-<div class="banner">🧪 <b>Prototipo visual con datos de ejemplo.</b> Login, Supabase, Claude y el envío real de emails todavía no están conectados en este archivo.</div>
+<div class="banner">🧪 <b>Login y datos ya son reales (Supabase).</b> La extracción con Claude y el envío automático de emails todavía están simulados en este archivo.</div>
 
 <!-- LOGIN -->
 <div id="view-login">
@@ -198,10 +198,10 @@
     </div>
     <div class="field">
       <label>Contraseña</label>
-      <input type="password" id="login-pass" value="••••••••">
+      <input type="password" id="login-pass" placeholder="Tu contraseña">
     </div>
-    <button class="btn btn-block" onclick="doLogin()">Iniciar sesión</button>
-    <p class="hint">Mockup: cualquier email / contraseña te deja entrar.</p>
+    <p id="login-error" class="hidden" style="color:var(--red);font-size:14px;margin:0 0 12px;">Email o contraseña incorrectos.</p>
+    <button class="btn btn-block" id="login-btn" onclick="doLogin()">Iniciar sesión</button>
   </div>
 </div>
 
@@ -221,115 +221,84 @@
 
 <div id="toast" class="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+/* ---------------- SUPABASE ---------------- */
+const SUPABASE_URL = 'https://ucxgcknuxbprlhssqfjv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_r0kBFpsITALqy8jMh2PN7Q_I-9CWTxH';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 /* ---------------- DATA ---------------- */
-const TODAY = new Date('2026-08-11');
+const TODAY = new Date();
+TODAY.setHours(0,0,0,0);
 
-const seed = { projects: [
-  { id:'p1', nombre:'Xymmetry México — Campaña Landing', cliente:'Xymmetry México', meetings:[
-    { id:'m1', nombre:'Reunión de seguimiento — campaña landing', fecha:'2026-07-20', proximaReunion:null,
-      resumen:'Se revisó el avance de la campaña de Xymmetry en México y la preparación de la landing page.',
-      decisiones:[
-        {texto:'Los banners dirigirán a una landing específica.', tema:null},
-        {texto:'La landing deberá funcionar en móvil y escritorio.', tema:null},
-        {texto:'El CTA principal será "Prueba gratis 14 días".', tema:null}
-      ],
-      riesgos:[{texto:'Que la landing no cargue rápido en móvil y afecte la conversión de la campaña.', tema:null}],
-      preguntas:[
-        {texto:'Confirmar fecha de publicación.', tema:null},
-        {texto:'Validar integración del formulario.', tema:null},
-        {texto:'Revisar velocidad móvil.', tema:null}
-      ],
-      aprendizajes:[{texto:'Los banners de Interest Rate Swap no deberían dirigir a una landing dedicada exclusivamente a forwards.', tema:null}],
-      tareas:[
-        {id:'t1', desc:'Aprobar el copy final', resp:'Francisco', email:'fmatthews@netgo.net', tema:null, tipo:'accion_propia', fecha:'2026-08-12', done:false},
-        {id:'t2', desc:'Implementar la landing en WordPress', resp:'Equipo técnico', email:'', tema:null, tipo:'accion_propia', fecha:'2026-08-09', done:false},
-        {id:'t3', desc:'Incorporar los parámetros UTM', resp:'Equipo comercial', email:'', tema:null, tipo:'accion_propia', fecha:null, done:false}
-      ]},
-    { id:'m2', nombre:'Revisión de UTM y QA', fecha:'2026-08-05', proximaReunion:null,
-      resumen:'Se revisaron los parámetros UTM cargados y se hizo control de calidad de la landing en desktop.',
-      decisiones:[{texto:'Se aprueba la estructura de UTM propuesta por el equipo comercial.', tema:null}],
-      riesgos:[],
-      preguntas:[{texto:'Definir quién hace el QA final en mobile.', tema:null}],
-      aprendizajes:[{texto:'Conviene testear la landing en al menos 2 navegadores antes de publicar.', tema:null}],
-      tareas:[
-        {id:'t4', desc:'Testear landing en Safari y Chrome', resp:'Equipo técnico', email:'', tema:null, tipo:'accion_propia', fecha:'2026-08-14', done:false}
-      ]}
-  ]},
-  { id:'p2', nombre:'Acompañamiento DPE — Empresa Andina', cliente:'Empresa Andina', meetings:[
-    { id:'m3', nombre:'Kickoff diagnóstico DPE', fecha:'2026-08-01', proximaReunion:null,
-      resumen:'Reunión inicial para relevar la política de riesgo financiero actual de la empresa.',
-      decisiones:[{texto:'Se acuerda un cronograma de 6 semanas para el diagnóstico.', tema:null}],
-      riesgos:[{texto:'Disponibilidad limitada del CFO para las próximas entrevistas.', tema:null}],
-      preguntas:[{texto:'Definir alcance exacto del acompañamiento post-diagnóstico.', tema:null}],
-      aprendizajes:[],
-      tareas:[
-        {id:'t5', desc:'Enviar cuestionario de riesgo inicial', resp:'Carolina', email:'', tema:null, tipo:'accion_propia', fecha:'2026-08-11', done:false},
-        {id:'t6', desc:'Agendar entrevista con CFO', resp:'Gastón', email:'', tema:null, tipo:'accion_propia', fecha:null, done:true}
-      ]}
-  ]},
-  { id:'p3', nombre:'Symmetry México — Equipo Comercial', cliente:'Interno / Equipo comercial México', meetings:[
-    { id:'m4', nombre:'Reunión semanal equipo comercial', fecha:'2026-08-11', proximaReunion:'2026-08-18',
-      resumen:'Reunión semanal del equipo comercial de Symmetry México: revisión de los videos educativos de producto (forward, swap, portafolio) con feedback de edición, actualización de pipeline (Frisa, ITOC, la constructora, Hipotecaria Federal), estrategia frente a gremios (IMEF/Asofom) y competencia (Grain, Exxon, Stone), avance del equipo de ventas de Quantit, y plan de distribución en LinkedIn con presupuesto.',
-      decisiones:[
-        {texto:'Bajar el volumen de la música en los videos educativos.', tema:'Marketing / Video'},
-        {texto:'Enviar los videos sin password para poder subirlos de forma orgánica en todos los canales.', tema:'Marketing / Video'},
-        {texto:'Invertir presupuesto en LinkedIn Ads para México en vez de depender solo del alcance orgánico.', tema:'Marketing / Distribución'},
-        {texto:'Evaluar ofrecer 50% de descuento los primeros 6-12 meses a miembros de Asofom como oferta de lanzamiento (a confirmar con el resto del equipo).', tema:'Gremios / Competencia'}
-      ],
-      riesgos:[
-        {texto:'Grain (competidor) ya está posicionado como expositor en los gremios (IMEF/Asofom) y les está ganando la posición.', tema:'Gremios / Competencia'},
-        {texto:'Baja tasa de respuesta de contactos clave: Hipotecaria Federal (5-7 correos sin respuesta) y TIIE Fondeo.', tema:'Comercial'},
-        {texto:'El esquema de comisión variable para el equipo de Quantit todavía no está definido; puede generar inequidad frente a otros vendedores.', tema:'Equipo Quantit'},
-        {texto:'Alcance orgánico muy bajo en LinkedIn sin presupuesto pago (estimado ~10% del alcance pago).', tema:'Marketing / Distribución'}
-      ],
-      preguntas:[
-        {texto:'¿Asofom cobra o no a las empresas expositoras/patrocinadoras, como parece hacerlo Grain?', tema:'Gremios / Competencia'},
-        {texto:'¿Cuánto presupuesto asignar a LinkedIn Ads para México?', tema:'Marketing / Distribución'},
-        {texto:'¿Cómo se va a estructurar el pago de comisiones variables al equipo de Quantit?', tema:'Equipo Quantit'},
-        {texto:'¿Qué banco es el que se inscribió al webinar?', tema:'Marketing / Distribución'}
-      ],
-      aprendizajes:[
-        {texto:'Conectarse vía API con un cliente genera un alto costo de cambio (switching cost) que ayuda mucho a la retención.', tema:'Producto'},
-        {texto:'La visualización promedio de un video en LinkedIn es de ~20 segundos: si la marca aparece recién al segundo 25, la mayoría no llega a verla.', tema:'Marketing / Video'},
-        {texto:'Ofertas de descuento agresivas (meses gratis) no siempre generan mejor percepción de valor que un descuento parcial con permanencia mínima.', tema:'Gremios / Competencia'}
-      ],
-      tareas:[
-        {id:'t7', desc:'Buscar opciones de subtitulación para el carrusel de LinkedIn', resp:'Alan', email:'', tema:'Marketing / Video', tipo:'accion_propia', fecha:null, done:false},
-        {id:'t8', desc:'Preparar propuesta de avance para el economista y presentarla', resp:'Claudio / Pancho', email:'', tema:'Marketing / Distribución', tipo:'accion_propia', fecha:'2026-08-18', done:false},
-        {id:'t9', desc:'Revisar con la agencia el volumen de audio y reenviar los videos sin password', resp:'Paris', email:'', tema:'Marketing / Video', tipo:'accion_propia', fecha:'2026-08-18', done:false},
-        {id:'t10', desc:'Conversar con la agencia sobre presupuesto/alcance en LinkedIn y contarlo en la próxima reunión', resp:'Paris', email:'', tema:'Marketing / Distribución', tipo:'accion_propia', fecha:'2026-08-18', done:false},
-        {id:'t11', desc:'Compartir las métricas de publicaciones anteriores de Symmetry en LinkedIn/ActiveCampaign', resp:'Paris', email:'', tema:'Marketing / Distribución', tipo:'accion_propia', fecha:'2026-08-18', done:false},
-        {id:'t12', desc:'Dar el detalle de los inscritos del banco al webinar', resp:'Claudio', email:'', tema:'Marketing / Distribución', tipo:'accion_propia', fecha:'2026-08-18', done:false},
-        {id:'t13', desc:'Hablar con la directora de RRHH sobre el esquema de comisiones variables para Quantit', resp:'Alfredo', email:'', tema:'Equipo Quantit', tipo:'accion_propia', fecha:'2026-08-14', done:false},
-        {id:'t14', desc:'Juntar al equipo de Quantit con Alan/Jesús para explicarles de qué se trata Symmetry, ahora que Andrés volvió', resp:'Alfredo / Alan / Jesús', email:'', tema:'Equipo Quantit', tipo:'accion_propia', fecha:null, done:false},
-        {id:'t15', desc:'Seguir armando la lista de empresas objetivo (corporativos y fibras), identificando a los CFOs detrás de los fideicomisos', resp:'Alan', email:'', tema:'Comercial', tipo:'accion_propia', fecha:null, done:false},
-        {id:'t16', desc:'Escalar el contacto de Hipotecaria Federal a un nivel más arriba', resp:'Jesús', email:'', tema:'Comercial', tipo:'accion_propia', fecha:null, done:false},
-        {id:'t17', desc:'Respuesta de TIIE Fondeo sobre la propuesta enviada', resp:'', email:'', tema:'Comercial', tipo:'en_espera_terceros', fecha:'2026-08-18', done:false},
-        {id:'t18', desc:'Respuesta de la constructora sobre el contrato y la cotización enviados', resp:'', email:'', tema:'Comercial', tipo:'en_espera_terceros', fecha:null, done:false},
-        {id:'t19', desc:'Confirmación formal de Frisa (ya acordaron 4 usuarios: 2 corporativos + 2 informativos)', resp:'', email:'', tema:'Comercial', tipo:'en_espera_terceros', fecha:null, done:false},
-        {id:'t20', desc:'Resultado del proceso de admisión a IMEF (documentación ya enviada)', resp:'', email:'', tema:'Gremios / Competencia', tipo:'en_espera_terceros', fecha:null, done:false}
-      ]}
-  ]}
-]};
+let state = { projects: [] };
+let currentUser = null;
 
-let state = loadState();
-function loadState(){
-  const saved = localStorage.getItem('pmai_state');
-  return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(seed));
+async function fetchAllData(){
+  const { data, error } = await supabaseClient
+    .from('projects')
+    .select(`
+      id, nombre, cliente,
+      meetings (
+        id, nombre, fecha_reunion, proxima_reunion, resumen, decisiones, riesgos, preguntas_abiertas, aprendizajes,
+        tasks ( id, descripcion, tema, tipo, responsable, email_responsable, fecha_vencimiento, completada )
+      )
+    `)
+    .order('created_at', { ascending: true });
+  if(error){ console.error(error); toast('Error al cargar tus datos: ' + error.message); return; }
+  state.projects = (data||[]).map(p => ({
+    id: p.id, nombre: p.nombre, cliente: p.cliente,
+    meetings: (p.meetings||[]).slice().sort((a,b)=> new Date(a.fecha_reunion||0) - new Date(b.fecha_reunion||0)).map(m => ({
+      id: m.id, nombre: m.nombre, fecha: m.fecha_reunion, proximaReunion: m.proxima_reunion,
+      resumen: m.resumen || '',
+      decisiones: m.decisiones || [], riesgos: m.riesgos || [], preguntas: m.preguntas_abiertas || [], aprendizajes: m.aprendizajes || [],
+      tareas: (m.tasks||[]).map(t => ({
+        id: t.id, desc: t.descripcion, resp: t.responsable, email: t.email_responsable,
+        tema: t.tema, tipo: t.tipo, fecha: t.fecha_vencimiento, done: t.completada
+      }))
+    }))
+  }));
 }
-function saveState(){ localStorage.setItem('pmai_state', JSON.stringify(state)); }
 
 /* ---------------- NAV / AUTH ---------------- */
-function doLogin(){
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  errEl.classList.add('hidden');
+  btn.disabled = true; btn.textContent = 'Iniciando sesión...';
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'Iniciar sesión';
+  if(error){
+    errEl.textContent = 'Email o contraseña incorrectos.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  currentUser = data.user;
   document.getElementById('view-login').classList.add('hidden');
   document.getElementById('view-app').classList.remove('hidden');
+  await fetchAllData();
   showDashboard();
 }
-function doLogout(){
+async function doLogout(){
+  await supabaseClient.auth.signOut();
+  currentUser = null;
   document.getElementById('view-app').classList.add('hidden');
   document.getElementById('view-login').classList.remove('hidden');
 }
+async function checkSession(){
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if(session){
+    currentUser = session.user;
+    document.getElementById('view-login').classList.add('hidden');
+    document.getElementById('view-app').classList.remove('hidden');
+    await fetchAllData();
+    showDashboard();
+  }
+}
+checkSession();
 function setActiveNav(id){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -417,12 +386,13 @@ function openNewProjectModal(){
     </div>
   `);
 }
-function createProject(){
+async function createProject(){
   const nombre = document.getElementById('np-nombre').value.trim() || 'Proyecto sin nombre';
   const cliente = document.getElementById('np-cliente').value.trim();
-  const id = 'p'+Date.now();
-  state.projects.push({id, nombre, cliente, meetings:[]});
-  saveState(); closeOverlay(); showProjects();
+  const { error } = await supabaseClient.from('projects').insert({ nombre, cliente });
+  if(error){ toast('Error al crear el proyecto: ' + error.message); return; }
+  await fetchAllData();
+  closeOverlay(); showProjects();
   toast('Proyecto creado.');
 }
 
@@ -514,23 +484,27 @@ function renderMeeting(m, projectId){
     </div>`;
 }
 
-function updateTaskField(projectId, meetingId, taskId, field, value){
+async function updateTaskField(projectId, meetingId, taskId, field, value){
+  const column = field === 'resp' ? 'responsable' : 'email_responsable';
+  const { error } = await supabaseClient.from('tasks').update({ [column]: value }).eq('id', taskId);
+  if(error){ toast('Error al guardar: ' + error.message); return; }
   const p = state.projects.find(x=>x.id===projectId);
   const m = p.meetings.find(x=>x.id===meetingId);
   const t = m.tareas.find(x=>x.id===taskId);
   t[field] = value;
-  saveState();
 }
 
 function toggleMeeting(id){
   document.getElementById('meeting-'+id).classList.toggle('open');
 }
-function toggleTask(meetingId, taskId){
+async function toggleTask(meetingId, taskId){
   const p = state.projects.find(x=>x.id===currentProjectId);
   const m = p.meetings.find(x=>x.id===meetingId);
   const t = m.tareas.find(x=>x.id===taskId);
-  t.done = !t.done;
-  saveState();
+  const newDone = !t.done;
+  const { error } = await supabaseClient.from('tasks').update({ completada: newDone }).eq('id', taskId);
+  if(error){ toast('Error al actualizar: ' + error.message); return; }
+  t.done = newDone;
   const wasOpen = document.getElementById('meeting-'+meetingId).classList.contains('open');
   showProjectDetail(currentProjectId);
   if(wasOpen) document.getElementById('meeting-'+meetingId).classList.add('open');
@@ -552,24 +526,26 @@ function openUploadModal(projectId){
     </div>
   `);
 }
-function processUpload(projectId){
+async function processUpload(projectId){
   const nombre = document.getElementById('up-nombre').value.trim() || 'Nueva reunión';
-  document.getElementById('up-status').innerHTML = `<p style="font-size:14.5px;color:#6b7280;margin-top:10px"><span class="spinner"></span>Procesando con Claude (simulado)…</p>`;
-  setTimeout(()=>{
-    const p = state.projects.find(x=>x.id===projectId);
-    const id = 'm'+Date.now();
-    p.meetings.push({
-      id, nombre, fecha: '2026-08-11', proximaReunion: null,
-      resumen:'(Ejemplo) Resumen generado automáticamente a partir de la transcripción subida.',
-      decisiones:[{texto:'(Ejemplo) Decisión identificada en la reunión.', tema:null}],
-      riesgos:[{texto:'(Ejemplo) Riesgo identificado en la reunión.', tema:null}],
-      preguntas:[{texto:'(Ejemplo) Pregunta que quedó sin resolver.', tema:null}],
-      aprendizajes:[{texto:'(Ejemplo) Aprendizaje registrado.', tema:null}],
-      tareas:[{id:'t'+Date.now(), desc:'(Ejemplo) Tarea extraída de la reunión', resp:'Sin definir', email:'', tema:null, tipo:'accion_propia', fecha:null, done:false}]
-    });
-    saveState(); closeOverlay(); showProjectDetail(projectId);
-    toast('Transcripción procesada.');
-  }, 1400);
+  document.getElementById('up-status').innerHTML = `<p style="font-size:14.5px;color:#6b7280;margin-top:10px"><span class="spinner"></span>Procesando (simulado)…</p>`;
+  const todayISO = new Date().toISOString().slice(0,10);
+  const { data: meeting, error } = await supabaseClient.from('meetings').insert({
+    project_id: projectId, nombre, fecha_reunion: todayISO,
+    resumen: '(Ejemplo) Resumen generado automáticamente a partir de la transcripción subida.',
+    decisiones: [{texto:'(Ejemplo) Decisión identificada en la reunión.', tema:null}],
+    riesgos: [{texto:'(Ejemplo) Riesgo identificado en la reunión.', tema:null}],
+    preguntas_abiertas: [{texto:'(Ejemplo) Pregunta que quedó sin resolver.', tema:null}],
+    aprendizajes: [{texto:'(Ejemplo) Aprendizaje registrado.', tema:null}]
+  }).select().single();
+  if(error){ toast('Error al procesar: ' + error.message); return; }
+  const { error: taskErr } = await supabaseClient.from('tasks').insert({
+    meeting_id: meeting.id, descripcion: '(Ejemplo) Tarea extraída de la reunión', tipo: 'accion_propia'
+  });
+  if(taskErr){ toast('Error al crear la tarea: ' + taskErr.message); return; }
+  await fetchAllData();
+  closeOverlay(); showProjectDetail(projectId);
+  toast('Transcripción procesada (contenido simulado — Claude todavía no está conectado).');
 }
 
 /* ---- Vista previa de alerta ---- */
@@ -635,12 +611,14 @@ function previewAlertGlobal(projectId, meetingId, taskId){
   currentProjectId = projectId;
   previewAlert(meetingId, taskId);
 }
-function toggleTaskGlobal(projectId, meetingId, taskId){
+async function toggleTaskGlobal(projectId, meetingId, taskId){
+  const { error } = await supabaseClient.from('tasks').update({ completada: true }).eq('id', taskId);
+  if(error){ toast('Error al actualizar: ' + error.message); return; }
   const p = state.projects.find(x=>x.id===projectId);
   const m = p.meetings.find(x=>x.id===meetingId);
   const t = m.tareas.find(x=>x.id===taskId);
   t.done = true;
-  saveState(); showPending();
+  showPending();
   toast('Tarea marcada como completada.');
 }
 
