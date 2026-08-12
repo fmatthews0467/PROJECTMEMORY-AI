@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Project Memory AI — Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#ece9f8; --panel:#ffffff; --border:#e5e7eb; --text:#1f2430; --muted:#6b7280;
+    --accent:#4f46e5; --accent-soft:#eef2ff; --red:#dc2626; --red-soft:#fef2f2;
+    --amber:#d97706; --amber-soft:#fffbeb; --green:#16a34a; --green-soft:#f0fdf4;
+    --lime:#c8f169; --navy:#14162b; --navy-soft:#20223d;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Poppins',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);min-width:1000px;padding:20px;}
+  button{font-family:inherit;cursor:pointer;}
+  .hidden{display:none !important;}
+
+  /* ---- Banner ---- */
+  .banner{background:var(--navy);color:#fff;padding:10px 24px;font-size:15px;text-align:center;border-radius:12px;margin-bottom:14px;}
+  .banner b{color:var(--lime);}
+
+  /* ---- Login ---- */
+  #view-login{min-height:70vh;display:flex;align-items:center;justify-content:center;}
+  .login-card{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:40px;width:360px;box-shadow:0 20px 50px rgba(20,22,43,.12);}
+  .login-card h1{font-size:23px;margin:0 0 4px;}
+  .login-card p.sub{color:var(--muted);font-size:15px;margin:0 0 24px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:14px;color:var(--muted);margin-bottom:4px;}
+  .field input{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:16px;}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:16px;font-weight:600;}
+  .btn:hover{background:#4338ca;}
+  .btn-block{width:100%;}
+  .btn-secondary{background:#fff;color:var(--text);border:1px solid var(--border);}
+  .btn-secondary:hover{background:#f3f4f6;}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:14px;text-align:center;}
+
+  /* ---- Shell ---- */
+  #view-app{display:flex;max-width:1440px;margin:0 auto;border-radius:22px;overflow:hidden;box-shadow:0 24px 60px rgba(20,22,43,.18);min-height:calc(100vh - 60px);}
+  .sidebar{width:230px;background:var(--navy);border-right:none;padding:22px 14px;flex-shrink:0;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;padding:0 6px 24px;color:#fff;}
+  .brand .logo-mark{width:30px;height:30px;border-radius:9px;background:var(--lime);color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;}
+  .nav-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;font-size:15.5px;color:#9799b8;margin-bottom:3px;cursor:pointer;}
+  .nav-item:hover{background:var(--navy-soft);color:#fff;}
+  .nav-item.active{background:var(--lime);color:var(--navy);font-weight:700;}
+  .sidebar-foot{margin-top:24px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);}
+  .logout-link{font-size:14.5px;color:#9799b8;cursor:pointer;}
+  .logout-link:hover{color:#fff;}
+
+  .main{flex:1;padding:28px 36px;overflow-y:auto;background:var(--panel);}
+  .page-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;}
+  .page-head h2{margin:0 0 4px;font-size:23px;}
+  .page-head p{margin:0;color:var(--muted);font-size:15px;}
+
+  /* ---- Cards / grids ---- */
+  .grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+  .project-card{cursor:pointer;transition:box-shadow .15s;}
+  .project-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);}
+  .project-card h3{margin:0 0 4px;font-size:17px;}
+  .project-card .client{color:var(--accent);font-size:14px;font-weight:600;margin-bottom:10px;}
+  .project-card .meta{color:var(--muted);font-size:14px;}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
+  .kpi-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+  .kpi-card .num{font-size:32px;font-weight:700;}
+  .kpi-card .label{color:var(--muted);font-size:14.5px;margin-top:2px;}
+  .kpi-card .note{color:#9ca3af;font-size:12px;margin-top:6px;}
+
+  /* ---- Meeting card ---- */
+  .meeting{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;}
+  .meeting-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;cursor:pointer;}
+  .meeting-head:hover{background:#fafafa;}
+  .meeting-head h4{margin:0;font-size:16.5px;}
+  .meeting-head .date{color:var(--muted);font-size:14px;margin-top:2px;}
+  .chevron{color:var(--muted);font-size:14px;transition:transform .15s;}
+  .meeting-body{padding:0 18px 18px;border-top:1px solid var(--border);display:none;}
+  .meeting.open .meeting-body{display:block;}
+  .meeting.open .chevron{transform:rotate(90deg);}
+
+  .cat{margin-top:16px;}
+  .cat h5{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);}
+  .cat ul{margin:0;padding-left:18px;font-size:15.5px;line-height:1.6;}
+  .cat p{margin:0;font-size:15.5px;line-height:1.6;}
+
+  table.tasks{width:100%;border-collapse:collapse;font-size:15.5px;margin-top:4px;}
+  table.tasks th{text-align:left;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:6px 8px;border-bottom:1px solid var(--border);}
+  table.tasks td{padding:8px;border-bottom:1px solid #f1f1f3;vertical-align:middle;}
+  table.tasks tr:last-child td{border-bottom:none;}
+  table.tasks tr.overdue{background:var(--red-soft);}
+  table.tasks tr.soon{background:var(--amber-soft);}
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12.5px;font-weight:600;}
+  .badge-overdue{background:var(--red-soft);color:var(--red);}
+  .badge-soon{background:var(--amber-soft);color:var(--amber);}
+  .badge-ok{background:#f3f4f6;color:var(--muted);}
+  .badge-done{background:var(--green-soft);color:var(--green);}
+  .badge-accion{background:var(--accent-soft);color:var(--accent);}
+  .badge-espera{background:#f3e8ff;color:#7e22ce;}
+  .tema-tag{display:inline-block;background:#f3f4f6;color:var(--muted);font-size:11.5px;padding:1px 7px;border-radius:10px;margin-left:6px;white-space:nowrap;}
+  .link-btn{background:none;border:none;color:var(--accent);font-size:14.5px;font-weight:600;padding:0;}
+  .link-btn:hover{text-decoration:underline;}
+
+  /* ---- Pending tasks page ---- */
+  .pending-row{display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;}
+  .pending-row.overdue{border-left:3px solid var(--red);}
+  .pending-row.soon{border-left:3px solid var(--amber);}
+  .pending-row .desc{flex:1;}
+  .pending-row .desc strong{display:block;font-size:16px;}
+  .pending-row .desc span{color:var(--muted);font-size:14px;}
+  .pending-row .due{width:150px;font-size:15px;}
+  .pending-row .proj{width:200px;font-size:14.5px;color:var(--muted);}
+
+  /* ---- Modal ---- */
+  .overlay{position:fixed;inset:0;background:rgba(17,24,39,.45);display:flex;align-items:center;justify-content:center;z-index:50;}
+  .modal{background:#fff;border-radius:var(--radius);width:460px;max-width:92vw;padding:26px;}
+  .modal h3{margin:0 0 4px;font-size:18.5px;}
+  .modal p.sub{color:var(--muted);font-size:14.5px;margin:0 0 18px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
+  .email-preview{background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:14px;font-size:14.5px;line-height:1.6;}
+  .email-preview b{display:block;}
+  .sim-note{background:var(--amber-soft);color:var(--amber);border-radius:8px;padding:8px 10px;font-size:13px;margin-top:12px;}
+
+  .spinner{width:16px;height:16px;border:2px solid #e5e7eb;border-top-color:var(--accent);border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .empty{color:var(--muted);font-size:15px;padding:30px 0;text-align:center;}
+  .toast{position:fixed;bottom:20px;right:20px;background:#111827;color:#fff;padding:10px 16px;border-radius:8px;font-size:15px;z-index:80;opacity:0;transition:opacity .2s;}
+  .toast.show{opacity:1;}
+
+  /* ---- Inline edit inputs (responsable / email) ---- */
+  .inline-edit{border:1px solid transparent;background:transparent;padding:5px 6px;border-radius:6px;width:100%;font-size:15px;font-family:inherit;color:var(--text);}
+  .inline-edit::placeholder{color:#b0b5bd;}
+  .inline-edit:hover{background:#f9fafb;border-color:var(--border);}
+  .inline-edit:focus{background:#fff;border-color:var(--accent);outline:none;}
+
+  /* ---- Hero header (saludo) ---- */
+  .hero-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
+  .hero-head h2{margin:0;font-size:25.5px;}
+  .hero-head p{margin:4px 0 0;color:var(--muted);font-size:15px;}
+  .hero-actions{display:flex;align-items:center;gap:14px;}
+  .search-box{display:flex;align-items:center;gap:6px;background:#f3f4f7;border-radius:20px;padding:9px 14px;font-size:14.5px;color:var(--muted);}
+  .search-box input{border:none;background:transparent;outline:none;font-size:14.5px;width:170px;color:var(--text);}
+  .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--lime),var(--accent));color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex-shrink:0;}
+
+  /* ---- Dashboard: visión general ---- */
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px;}
+  .kpi-tile{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;}
+  .kpi-tile.kpi-alert{border-color:#fecaca;}
+  .icon-chip{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18.5px;margin-bottom:10px;}
+  .chip-indigo{background:#eef2ff;} .chip-blue{background:#e0f2fe;} .chip-amber{background:#fef3c7;}
+  .chip-red{background:#fee2e2;} .chip-green{background:#dcfce7;}
+  .kpi-tile .num{font-size:27.5px;font-weight:700;line-height:1.1;}
+  .kpi-tile .label{font-size:13px;color:var(--muted);margin-top:2px;}
+  .kpi-tile .label .note{display:block;font-size:11px;color:#9ca3af;margin-top:1px;}
+
+  .chart-row{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:16px;}
+  .chart-card h3{margin:0 0 12px;font-size:15px;}
+  .donut-wrap{display:flex;align-items:center;gap:18px;}
+  .donut-legend{font-size:14.5px;color:var(--text);display:flex;flex-direction:column;gap:8px;}
+  .donut-legend b{margin-left:4px;}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;}
+
+  /* ---- Progreso por proyecto ---- */
+  .progress-list{display:flex;flex-direction:column;gap:10px;}
+  .progress-item{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;}
+  .progress-avatar{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;flex-shrink:0;}
+  .progress-info{flex:1;display:flex;flex-direction:column;min-width:0;}
+  .progress-info span{color:var(--muted);font-size:13px;margin-top:2px;}
+  .progress-stat{color:var(--muted);font-size:14px;margin-right:6px;white-space:nowrap;}
+
+  .dash-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start;}
+  .dash-col{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+  .dash-col.attention-col{border-color:#fde68a;}
+  .dash-col h3{margin:0 0 10px;font-size:15px;}
+  .mini-row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f1f1f3;font-size:14.5px;}
+  .mini-row:last-child{border-bottom:none;}
+  .mini-desc strong{display:block;font-size:15px;font-weight:600;}
+  .mini-desc span{color:var(--muted);font-size:13px;}
+  .mini-date{color:var(--muted);font-size:13px;white-space:nowrap;width:60px;flex-shrink:0;}
+  .proj-table-link{font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="banner">🧪 <b>Prototipo visual con datos de ejemplo.</b> Login, Supabase, Claude y el envío real de emails todavía no están conectados en este archivo.</div>
+
+<!-- LOGIN -->
+<div id="view-login">
+  <div class="login-card">
+    <h1>Project Memory AI</h1>
+    <p class="sub">Memoria estructurada de tus reuniones</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" value="fmatthews@netgo.net">
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" value="••••••••">
+    </div>
+    <button class="btn btn-block" onclick="doLogin()">Iniciar sesión</button>
+    <p class="hint">Mockup: cualquier email / contraseña te deja entrar.</p>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="view-app" class="hidden">
+  <div class="sidebar">
+    <div class="brand"><span class="logo-mark">PM</span> Project Memory AI</div>
+    <div class="nav-item" id="nav-dashboard" onclick="showDashboard()">🏠 Inicio</div>
+    <div class="nav-item" id="nav-projects" onclick="showProjects()">📁 Proyectos</div>
+    <div class="nav-item" id="nav-pending" onclick="showPending()">✅ Tareas pendientes</div>
+    <div class="sidebar-foot">
+      <a class="logout-link" onclick="doLogout()">Cerrar sesión</a>
+    </div>
+  </div>
+  <div class="main" id="main"></div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ---------------- DATA ---------------- */
+const TODAY = new Date('2026-08-11');
+
+const seed = { projects: [
+  { id:'p1', nombre:'Xymmetry México — Campaña Landing', cliente:'Xymmetry México', meetings:[
+    { id:'m1', nombre:'Reunión de seguimiento — campaña landing', fecha:'2026-07-20', proximaReunion:null,
+      resumen:'Se revisó el avance de la campaña de Xymmetry en México y la preparación de la landing page.',
+      decisiones:[
+        {texto:'Los banners dirigirán a una landing específica.', tema:null},
+        {texto:'La landing deberá funcionar en móvil y escritorio.', tema:null},
+        {texto:'El CTA principal será "Prueba gratis 14 días".', tema:null}
+      ],
+      riesgos:[{texto:'Que la landing no cargue rápido en móvil y afecte la conversión de la campaña.', tema:null}],
+      preguntas:[
+        {texto:'Confirmar fecha de publicación.', tema:null},
+        {texto:'Validar integración del formulario.', tema:null},
+        {texto:'Revisar velocidad móvil.', tema:null}
+      ],
+      aprendizajes:[{texto:'Los banners de Interest Rate Swap no deberían dirigir a una landing dedicada exclusivamente a forwards.', tema:null}],
+      tareas:[
+        {id:'t1', desc:'Aprobar el copy final', resp:'Francisco', email:'fmatthews@netgo.net', tema:null, tipo:'accion_propia', fecha:'2026-08-12', done:false},
+        {id:'t2', desc:'Implementar la landing en WordPress', resp:'Equipo técnico', email:'', tema:null, tipo:'accion_propia', fecha:'2026-08-09', done:false},
+        {id:'t3', desc:'Incorporar los parámetros UTM', resp:'Equipo comercial', email:'', tema:null, tipo:'accion_propia', fecha:null, done:false}
+      ]},
+    { id:'m2', nombre:'Revisión de UTM y QA', fecha:'2026-08-05', proximaReunion:null,
+      resumen:'Se revisaron los parámetros UTM cargados y se hizo control de calidad de la landing en desktop.',
+      decisiones:[{texto:'Se aprueba la estructura de UTM propuesta por el equipo comercial.', tema:null}],
+      riesgos:[],
+      preguntas:[{texto:'Definir quién hace el QA final en mobile.', tema:null}],
+      aprendizajes:[{texto:'Conviene testear la landing en al menos 2 navegadores antes de publicar.', tema:null}],
+      tareas:[
+        {id:'t4', desc:'Testear landing en Safari y Chrome', resp:'Equipo técnico', email:'', tema:null, tipo:'accion_propia', fecha:'2026-08-14', done:false}
+      ]}
+  ]},
+  { id:'p2', nombre:'Acompañamiento DPE — Empresa Andina', cliente:'Empresa Andina', meetings:[
+    { id:'m3', nombre:'Kickoff diagnóstico DPE', fecha:'2026-08-01', proximaReunion:null,
+      resumen:'Reunión inicial para relevar la política de riesgo financiero actual de la empresa.',
+      decisiones:[{texto:'Se acuerda un cronograma de 6 semanas para el diagnóstico.', tema:null}],
+      riesgos:[{texto:'Disponibilidad limitada del CFO para las próximas entrevistas.', tema:null}],
+      preguntas:[{texto:'Definir alcance exacto del acompañamiento post-diagnóstico.', tema:null}],
+      aprendizajes:[],
+      tareas:[
+        {id:'t5', desc:'Enviar cuestionario de riesgo inicial', resp:'Carolina', email:'', tema:null, tipo:'accion_propia', fecha:'2026-08-11', done:false},
+        {id:'t6', desc:'Agendar entrevista con CFO', resp:'Gastón', email:'', tema:null, tipo:'accion_propia', fecha:null, done:true}
+      ]}
+  ]},
+  { id:'p3', nombre:'Symmetry México — Equipo Comercial', cliente:'Interno / Equipo comercial México', meetings:[
+    { id:'m4', nombre:'Reunión semanal equipo comercial', fecha:'2026-08-11', proximaReunion:'2026-08-18',
+      resumen:'Reunión semanal del equipo comercial de Symmetry México: revisión de los videos educativos de producto (forward, swap, portafolio) con feedback de edición, actualización de pipeline (Frisa, ITOC, la constructora, Hipotecaria Federal), estrategia frente a gremios (IMEF/Asofom) y competencia (Grain, Exxon, Stone), avance del equipo de ventas de Quantit, y plan de distribución en LinkedIn con presupuesto.',
+      decisiones:[
+        {texto:'Bajar el volumen de la música en los videos educativos.', tema:'Marketing / Video'},
+        {texto:'Enviar los videos sin password para poder subirlos de forma orgánica en todos los canales.', tema:'Marketing / Video'},
+        {texto:'Invertir presupuesto en LinkedIn Ads para México en vez de depender solo del alcance orgánico.', tema:'Marketing / Distribución'},
+        {texto:'Evaluar ofrecer 50% de descuento los primeros 6-12 meses a miembros de Asofom como oferta de lanzamiento (a confirmar con el resto del equipo).', tema:'Gremios / Competencia'}
+      ],
+      riesgos:[
+        {texto:'Grain (competidor) ya está posicionado como expositor en los gremios (IMEF/Asofom) y les está ganando la posición.', tema:'Gremios / Competencia'},
+        {texto:'Baja tasa de respuesta de contactos clave: Hipotecaria Federal (5-7 correos sin respuesta) y TIIE Fondeo.', tema:'Comercial'},
+        {texto:'El esquema de comisión variable para el equipo de Quantit todavía no está definido; puede generar inequidad frente a otros vendedores.', tema:'Equipo Quantit'},
+        {texto:'Alcance orgánico muy bajo en LinkedIn sin presupuesto pago (estimado ~10% del alcance pago).', tema:'Marketing / Distribución'}
+      ],
+      preguntas:[
+        {texto:'¿Asofom cobra o no a las empresas expositoras/patrocinadoras, como parece hacerlo Grain?', tema:'Gremios / Competencia'},
+        {texto:'¿Cuánto presupuesto asignar a LinkedIn Ads para México?', tema:'Marketing / Distribución'},
+        {texto:'¿Cómo se va a estructurar el pago de comisiones variables al equipo de Quantit?', tema:'Equipo Quantit'},
+        {texto:'¿Qué banco es el que se inscribió al webinar?', tema:'Marketing / Distribución'}
+      ],
+      aprendizajes:[
+        {texto:'Conectarse vía API con un cliente genera un alto costo de cambio (switching cost) que ayuda mucho a la retención.', tema:'Producto'},
+        {texto:'La visualización promedio de un video en LinkedIn es de ~20 segundos: si la marca aparece recién al segundo 25, la mayoría no llega a verla.', tema:'Marketing / Video'},
+        {texto:'Ofertas de descuento agresivas (meses gratis) no siempre generan mejor percepción de valor que un descuento parcial con permanencia mínima.', tema:'Gremios / Competencia'}
+      ],
+      tareas:[
+        {id:'t7', desc:'Buscar opciones de subtitulación para el carrusel de LinkedIn', resp:'Alan', email:'', tema:'Marketing / Video', tipo:'accion_propia', fecha:null, done:false},
+        {id:'t8', desc:'Preparar propuesta de avance para el economista y presentarla', resp:'Claudio / Pancho', email:'', tema:'Marketing / Distribución', tipo:'accion_propia', fecha:'2026-08-18', done:false},
+        {id:'t9', desc:'Revisar con la agencia el volumen de audio y reenviar los videos sin password', resp:'Paris', email:'', tema:'Marketing / Video', tipo:'accion_propia', fecha:'2026-08-18', done:false},
+        {id:'t10', desc:'Conversar con la agencia sobre presupuesto/alcance en LinkedIn y contarlo en la próxima reunión', resp:'Paris', email:'', tema:'Marketing / Distribución', tipo:'accion_propia', fecha:'2026-08-18', done:false},
+        {id:'t11', desc:'Compartir las métricas de publicaciones anteriores de Symmetry en LinkedIn/ActiveCampaign', resp:'Paris', email:'', tema:'Marketing / Distribución', tipo:'accion_propia', fecha:'2026-08-18', done:false},
+        {id:'t12', desc:'Dar el detalle de los inscritos del banco al webinar', resp:'Claudio', email:'', tema:'Marketing / Distribución', tipo:'accion_propia', fecha:'2026-08-18', done:false},
+        {id:'t13', desc:'Hablar con la directora de RRHH sobre el esquema de comisiones variables para Quantit', resp:'Alfredo', email:'', tema:'Equipo Quantit', tipo:'accion_propia', fecha:'2026-08-14', done:false},
+        {id:'t14', desc:'Juntar al equipo de Quantit con Alan/Jesús para explicarles de qué se trata Symmetry, ahora que Andrés volvió', resp:'Alfredo / Alan / Jesús', email:'', tema:'Equipo Quantit', tipo:'accion_propia', fecha:null, done:false},
+        {id:'t15', desc:'Seguir armando la lista de empresas objetivo (corporativos y fibras), identificando a los CFOs detrás de los fideicomisos', resp:'Alan', email:'', tema:'Comercial', tipo:'accion_propia', fecha:null, done:false},
+        {id:'t16', desc:'Escalar el contacto de Hipotecaria Federal a un nivel más arriba', resp:'Jesús', email:'', tema:'Comercial', tipo:'accion_propia', fecha:null, done:false},
+        {id:'t17', desc:'Respuesta de TIIE Fondeo sobre la propuesta enviada', resp:'', email:'', tema:'Comercial', tipo:'en_espera_terceros', fecha:'2026-08-18', done:false},
+        {id:'t18', desc:'Respuesta de la constructora sobre el contrato y la cotización enviados', resp:'', email:'', tema:'Comercial', tipo:'en_espera_terceros', fecha:null, done:false},
+        {id:'t19', desc:'Confirmación formal de Frisa (ya acordaron 4 usuarios: 2 corporativos + 2 informativos)', resp:'', email:'', tema:'Comercial', tipo:'en_espera_terceros', fecha:null, done:false},
+        {id:'t20', desc:'Resultado del proceso de admisión a IMEF (documentación ya enviada)', resp:'', email:'', tema:'Gremios / Competencia', tipo:'en_espera_terceros', fecha:null, done:false}
+      ]}
+  ]}
+]};
+
+let state = loadState();
+function loadState(){
+  const saved = localStorage.getItem('pmai_state');
+  return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(seed));
+}
+function saveState(){ localStorage.setItem('pmai_state', JSON.stringify(state)); }
+
+/* ---------------- NAV / AUTH ---------------- */
+function doLogin(){
+  document.getElementById('view-login').classList.add('hidden');
+  document.getElementById('view-app').classList.remove('hidden');
+  showDashboard();
+}
+function doLogout(){
+  document.getElementById('view-app').classList.add('hidden');
+  document.getElementById('view-login').classList.remove('hidden');
+}
+function setActiveNav(id){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ---------------- HELPERS ---------------- */
+function fmtDate(d){
+  if(!d) return null;
+  const dt = new Date(d);
+  return dt.toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
+}
+function daysUntil(d){
+  const dt = new Date(d);
+  return Math.round((dt - TODAY) / 86400000);
+}
+function dueBadge(fecha){
+  if(!fecha) return '<span class="badge badge-ok">Sin definir</span>';
+  const diff = daysUntil(fecha);
+  if(diff < 0) return `<span class="badge badge-overdue">Vencida</span>`;
+  if(diff <= 1) return `<span class="badge badge-soon">Vence ${diff===0?'hoy':'mañana'}</span>`;
+  return `<span class="badge badge-ok">${fmtDate(fecha)}</span>`;
+}
+function tipoBadge(tipo){
+  return tipo==='en_espera_terceros'
+    ? '<span class="badge badge-espera">En espera de terceros</span>'
+    : '<span class="badge badge-accion">Acción propia</span>';
+}
+function temaTag(tema){
+  return tema ? `<span class="tema-tag">${tema}</span>` : '';
+}
+function sortTasksByPriority(tasks){
+  // acción propia antes que en espera; dentro de cada grupo, por fecha ascendente (sin fecha al final)
+  return [...tasks].sort((a,b)=>{
+    if(a.tipo !== b.tipo) return a.tipo==='accion_propia' ? -1 : 1;
+    if(!a.fecha && !b.fecha) return 0;
+    if(!a.fecha) return 1;
+    if(!b.fecha) return -1;
+    return new Date(a.fecha) - new Date(b.fecha);
+  });
+}
+function allMeetings(){
+  return state.projects.flatMap(p => p.meetings.map(m => ({...m, projectNombre:p.nombre})));
+}
+function allTasks(){
+  const out=[];
+  state.projects.forEach(p=>p.meetings.forEach(m=>m.tareas.forEach(t=>out.push({...t, projectId:p.id, projectNombre:p.nombre, meetingId:m.id, meetingNombre:m.nombre}))));
+  return out;
+}
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2600);
+}
+
+/* ---------------- VIEW: PROYECTOS ---------------- */
+function showProjects(){
+  setActiveNav('nav-projects');
+  const main = document.getElementById('main');
+  const cards = state.projects.map(p=>`
+    <div class="card project-card" onclick="showProjectDetail('${p.id}')">
+      <h3>${p.nombre}</h3>
+      <div class="client">${p.cliente || 'Sin cliente'}</div>
+      <div class="meta">${p.meetings.length} reunión${p.meetings.length!==1?'es':''} procesada${p.meetings.length!==1?'s':''}</div>
+    </div>`).join('');
+  main.innerHTML = `
+    <div class="page-head">
+      <div><h2>Proyectos</h2><p>Contenedores de reuniones. Cada uno junta la memoria de un cliente o iniciativa.</p></div>
+      <button class="btn" onclick="openNewProjectModal()">+ Nuevo proyecto</button>
+    </div>
+    <div class="grid-cards">${cards || '<div class="empty">Todavía no creaste ningún proyecto.</div>'}</div>
+  `;
+}
+
+function openNewProjectModal(){
+  showOverlay(`
+    <div class="modal">
+      <h3>Nuevo proyecto</h3>
+      <p class="sub">Simulación — se agrega localmente, no se guarda en Supabase todavía.</p>
+      <div class="field"><label>Nombre del proyecto</label><input id="np-nombre" placeholder="Ej. Campaña Q3 — Cliente X"></div>
+      <div class="field"><label>Cliente asociado</label><input id="np-cliente" placeholder="Ej. Xymmetry México"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeOverlay()">Cancelar</button>
+        <button class="btn" onclick="createProject()">Crear proyecto</button>
+      </div>
+    </div>
+  `);
+}
+function createProject(){
+  const nombre = document.getElementById('np-nombre').value.trim() || 'Proyecto sin nombre';
+  const cliente = document.getElementById('np-cliente').value.trim();
+  const id = 'p'+Date.now();
+  state.projects.push({id, nombre, cliente, meetings:[]});
+  saveState(); closeOverlay(); showProjects();
+  toast('Proyecto creado.');
+}
+
+/* ---------------- VIEW: DETALLE DE PROYECTO ---------------- */
+let currentProjectId = null;
+function showProjectDetail(id){
+  currentProjectId = id;
+  setActiveNav('nav-projects');
+  const p = state.projects.find(x=>x.id===id);
+  const main = document.getElementById('main');
+  const meetingsHtml = [...p.meetings].sort((a,b)=> new Date(b.fecha)-new Date(a.fecha)).map(m => renderMeeting(m, p.id)).join('')
+    || '<div class="empty">Todavía no subiste ninguna transcripción a este proyecto.</div>';
+
+  const learnings = [];
+  p.meetings.forEach(m => m.aprendizajes.forEach(a => learnings.push({text:a.texto, tema:a.tema, meeting:m.nombre, fecha:m.fecha})));
+  learnings.sort((a,b)=> new Date(b.fecha)-new Date(a.fecha));
+  const learningsHtml = learnings.length ? `
+    <div class="card" style="margin-bottom:18px">
+      <h3 style="margin:0 0 10px;font-size:16px">📚 Aprendizajes de este proyecto</h3>
+      <ul style="margin:0;padding-left:18px;font-size:15.5px;line-height:1.7">
+        ${learnings.map(l=>`<li>${l.text}${temaTag(l.tema)} <span style="color:#9ca3af;font-size:13px">— ${l.meeting}, ${fmtDate(l.fecha)}</span></li>`).join('')}
+      </ul>
+    </div>` : '';
+
+  // Briefing pre-reunión: usamos la próxima reunión mencionada en la reunión más reciente que la tenga
+  const withNext = p.meetings.filter(m=>m.proximaReunion).sort((a,b)=> new Date(b.fecha)-new Date(a.fecha));
+  const nextMeeting = withNext[0];
+  let briefingHtml = '';
+  if(nextMeeting){
+    const openTasks = sortTasksByPriority(p.meetings.flatMap(m=>m.tareas).filter(t=>!t.done));
+    briefingHtml = `
+      <div class="card" style="margin-bottom:18px;border-color:var(--accent);background:var(--accent-soft)">
+        <h3 style="margin:0 0 4px;font-size:16px;color:var(--accent)">📅 Próxima reunión: ${fmtDate(nextMeeting.proximaReunion)}</h3>
+        <p style="margin:0 0 10px;font-size:14.5px;color:var(--muted)">Compromisos abiertos para llegar preparado — acción propia primero.</p>
+        ${openTasks.length ? `<ul style="margin:0;padding-left:18px;font-size:15px;line-height:1.7">
+          ${openTasks.map(t=>`<li>${t.desc}${temaTag(t.tema)} — ${tipoBadge(t.tipo)} ${t.fecha?dueBadge(t.fecha):''}</li>`).join('')}
+        </ul>` : '<p style="margin:0;font-size:15px;color:var(--muted)">No hay compromisos abiertos. 🎉</p>'}
+      </div>`;
+  }
+
+  main.innerHTML = `
+    <div class="page-head">
+      <div>
+        <a class="link-btn" onclick="showProjects()">← Proyectos</a>
+        <h2 style="margin-top:6px">${p.nombre}</h2>
+        <p>${p.cliente ? 'Cliente: '+p.cliente : 'Sin cliente asociado'}</p>
+      </div>
+      <button class="btn" onclick="openUploadModal('${p.id}')">⬆ Subir transcripción</button>
+    </div>
+    ${briefingHtml}
+    ${learningsHtml}
+    <div id="meetings-list">${meetingsHtml}</div>
+  `;
+}
+
+function renderMeeting(m, projectId){
+  const tareasRows = sortTasksByPriority(m.tareas).map(t => `
+    <tr>
+      <td><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${m.id}','${t.id}')"></td>
+      <td style="${t.done?'text-decoration:line-through;color:#9ca3af':''}">${t.desc}${temaTag(t.tema)}</td>
+      <td>${tipoBadge(t.tipo)}</td>
+      <td><input class="inline-edit" type="text" placeholder="Sin definir" value="${t.resp||''}" onchange="updateTaskField('${projectId}','${m.id}','${t.id}','resp',this.value)"></td>
+      <td><input class="inline-edit" type="email" placeholder="Email opcional" value="${t.email||''}" onchange="updateTaskField('${projectId}','${m.id}','${t.id}','email',this.value)"></td>
+      <td>${t.done ? '<span class="badge badge-done">Completada</span>' : dueBadge(t.fecha)}</td>
+      <td>${t.fecha ? `<button class="link-btn" onclick="previewAlert('${m.id}','${t.id}')">Vista previa</button>` : ''}</td>
+    </tr>`).join('');
+
+  const list = (arr) => arr.length ? `<ul>${arr.map(x=>`<li>${x.texto}${temaTag(x.tema)}</li>`).join('')}</ul>` : '<p style="color:#9ca3af">— Ninguno.</p>';
+
+  return `
+    <div class="meeting" id="meeting-${m.id}">
+      <div class="meeting-head" onclick="toggleMeeting('${m.id}')">
+        <div><h4>${m.nombre}</h4><div class="date">${fmtDate(m.fecha)}${m.proximaReunion ? ` · Próxima reunión: ${fmtDate(m.proximaReunion)}` : ''}</div></div>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="meeting-body">
+        <div class="cat"><h5>Resumen</h5><p>${m.resumen}</p></div>
+        <div class="cat"><h5>Decisiones</h5>${list(m.decisiones)}</div>
+        <div class="cat"><h5>Tareas</h5>
+          <table class="tasks">
+            <thead><tr><th></th><th>Tarea</th><th>Tipo</th><th>Responsable</th><th>Email</th><th>Vencimiento</th><th></th></tr></thead>
+            <tbody>${tareasRows || '<tr><td colspan="7" style="color:#9ca3af">Sin tareas.</td></tr>'}</tbody>
+          </table>
+        </div>
+        <div class="cat"><h5>Riesgos</h5>${list(m.riesgos)}</div>
+        <div class="cat"><h5>Preguntas abiertas</h5>${list(m.preguntas)}</div>
+        <div class="cat"><h5>Aprendizajes</h5>${list(m.aprendizajes)}</div>
+      </div>
+    </div>`;
+}
+
+function updateTaskField(projectId, meetingId, taskId, field, value){
+  const p = state.projects.find(x=>x.id===projectId);
+  const m = p.meetings.find(x=>x.id===meetingId);
+  const t = m.tareas.find(x=>x.id===taskId);
+  t[field] = value;
+  saveState();
+}
+
+function toggleMeeting(id){
+  document.getElementById('meeting-'+id).classList.toggle('open');
+}
+function toggleTask(meetingId, taskId){
+  const p = state.projects.find(x=>x.id===currentProjectId);
+  const m = p.meetings.find(x=>x.id===meetingId);
+  const t = m.tareas.find(x=>x.id===taskId);
+  t.done = !t.done;
+  saveState();
+  const wasOpen = document.getElementById('meeting-'+meetingId).classList.contains('open');
+  showProjectDetail(currentProjectId);
+  if(wasOpen) document.getElementById('meeting-'+meetingId).classList.add('open');
+}
+
+/* ---- Subir transcripción (simulado) ---- */
+function openUploadModal(projectId){
+  showOverlay(`
+    <div class="modal">
+      <h3>Subir transcripción</h3>
+      <p class="sub">Simulación — no se envía nada a Claude todavía. Se agrega una reunión de ejemplo para mostrar el flujo.</p>
+      <div class="field"><label>Nombre de la reunión</label><input id="up-nombre" placeholder="Ej. Reunión de avance semanal"></div>
+      <div class="field"><label>Archivo (.txt o .docx)</label><input type="file" id="up-file" accept=".txt,.docx"></div>
+      <div id="up-status"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeOverlay()">Cancelar</button>
+        <button class="btn" onclick="processUpload('${projectId}')">Procesar con IA</button>
+      </div>
+    </div>
+  `);
+}
+function processUpload(projectId){
+  const nombre = document.getElementById('up-nombre').value.trim() || 'Nueva reunión';
+  document.getElementById('up-status').innerHTML = `<p style="font-size:14.5px;color:#6b7280;margin-top:10px"><span class="spinner"></span>Procesando con Claude (simulado)…</p>`;
+  setTimeout(()=>{
+    const p = state.projects.find(x=>x.id===projectId);
+    const id = 'm'+Date.now();
+    p.meetings.push({
+      id, nombre, fecha: '2026-08-11', proximaReunion: null,
+      resumen:'(Ejemplo) Resumen generado automáticamente a partir de la transcripción subida.',
+      decisiones:[{texto:'(Ejemplo) Decisión identificada en la reunión.', tema:null}],
+      riesgos:[{texto:'(Ejemplo) Riesgo identificado en la reunión.', tema:null}],
+      preguntas:[{texto:'(Ejemplo) Pregunta que quedó sin resolver.', tema:null}],
+      aprendizajes:[{texto:'(Ejemplo) Aprendizaje registrado.', tema:null}],
+      tareas:[{id:'t'+Date.now(), desc:'(Ejemplo) Tarea extraída de la reunión', resp:'Sin definir', email:'', tema:null, tipo:'accion_propia', fecha:null, done:false}]
+    });
+    saveState(); closeOverlay(); showProjectDetail(projectId);
+    toast('Transcripción procesada.');
+  }, 1400);
+}
+
+/* ---- Vista previa de alerta ---- */
+function previewAlert(meetingId, taskId){
+  const p = state.projects.find(x=>x.id===currentProjectId);
+  const m = p.meetings.find(x=>x.id===meetingId);
+  const t = m.tareas.find(x=>x.id===taskId);
+  showOverlay(`
+    <div class="modal">
+      <h3>Vista previa de alerta</h3>
+      <p class="sub">Así se vería el email si esta tarea vence dentro de las próximas 24hs.</p>
+      <div class="email-preview">
+        <b>Para:</b> fmatthews@netgo.net${t.email? ' · '+t.email : ''}<br>
+        <b>Asunto:</b> Recordatorio — vence pronto: ${t.desc}<br><br>
+        Hola,<br><br>
+        La tarea <b>"${t.desc}"</b>${t.tema? ` (tema: ${t.tema})`:''} del proyecto <b>${p.nombre}</b> (reunión: ${m.nombre}) vence el <b>${fmtDate(t.fecha)}</b>.<br>
+        Tipo: ${t.tipo==='en_espera_terceros' ? 'en espera de terceros' : 'acción propia'}.<br>
+        Responsable: ${t.resp || 'sin definir'}.
+      </div>
+      <div class="sim-note">Simulación. En la versión final, este email se envía automáticamente todos los días a las 10:00 AM (hora de Chile) para tareas que vencen dentro de las próximas 24hs.</div>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeOverlay()">Cerrar</button></div>
+    </div>
+  `);
+}
+
+/* ---------------- VIEW: TAREAS PENDIENTES ---------------- */
+function showPending(){
+  setActiveNav('nav-pending');
+  const main = document.getElementById('main');
+  const tasks = allTasks().filter(t=>!t.done && t.fecha)
+    .sort((a,b)=>{
+      const d = new Date(a.fecha) - new Date(b.fecha);
+      if(d!==0) return d;
+      if(a.tipo !== b.tipo) return a.tipo==='accion_propia' ? -1 : 1;
+      return a.projectNombre.localeCompare(b.projectNombre);
+    });
+  const rows = tasks.map(t=>{
+    const diff = daysUntil(t.fecha);
+    const cls = diff<0 ? 'overdue' : (diff<=1 ? 'soon' : '');
+    return `
+      <tr class="${cls}">
+        <td><input type="checkbox" onchange="toggleTaskGlobal('${t.projectId}','${t.meetingId}','${t.id}')"></td>
+        <td><strong>${t.desc}</strong>${temaTag(t.tema)}</td>
+        <td>${tipoBadge(t.tipo)}</td>
+        <td style="color:var(--muted)"><a class="link-btn" style="color:var(--muted);font-weight:400" onclick="showProjectDetail('${t.projectId}')">${t.projectNombre}</a></td>
+        <td><input class="inline-edit" type="text" placeholder="Sin definir" value="${t.resp||''}" onchange="updateTaskField('${t.projectId}','${t.meetingId}','${t.id}','resp',this.value)"></td>
+        <td><input class="inline-edit" type="email" placeholder="Email opcional" value="${t.email||''}" onchange="updateTaskField('${t.projectId}','${t.meetingId}','${t.id}','email',this.value)"></td>
+        <td>${dueBadge(t.fecha)}</td>
+        <td><button class="link-btn" onclick="previewAlertGlobal('${t.projectId}','${t.meetingId}','${t.id}')">Vista previa</button></td>
+      </tr>`;
+  }).join('');
+  main.innerHTML = `
+    <div class="page-head">
+      <div><h2>Tareas pendientes</h2><p>Todos los proyectos, ordenadas por vencimiento. Vencidas primero; a igual fecha, acción propia antes que en espera de terceros.</p></div>
+    </div>
+    <table class="tasks">
+      <thead><tr><th></th><th>Tarea</th><th>Tipo</th><th>Proyecto</th><th>Responsable</th><th>Email</th><th>Vencimiento</th><th></th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="8"><div class="empty">No hay tareas pendientes con fecha. 🎉</div></td></tr>'}</tbody>
+    </table>
+  `;
+}
+function previewAlertGlobal(projectId, meetingId, taskId){
+  currentProjectId = projectId;
+  previewAlert(meetingId, taskId);
+}
+function toggleTaskGlobal(projectId, meetingId, taskId){
+  const p = state.projects.find(x=>x.id===projectId);
+  const m = p.meetings.find(x=>x.id===meetingId);
+  const t = m.tareas.find(x=>x.id===taskId);
+  t.done = true;
+  saveState(); showPending();
+  toast('Tarea marcada como completada.');
+}
+
+/* ---------------- MINI CHARTS (SVG, sin dependencias) ---------------- */
+function svgBarChart(data, w, h){
+  w = w || 300; h = h || 130;
+  const max = Math.max(...data.map(d=>d.value), 1);
+  const barW = Math.min(40, (w-20)/data.length - 14);
+  const gap = (w - data.length*barW) / (data.length+1);
+  let bars = '';
+  data.forEach((d,i)=>{
+    const bh = Math.round((d.value/max)*(h-34));
+    const x = gap + i*(barW+gap);
+    const y = h-22-bh;
+    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(bh,2)}" rx="5" fill="${d.color}"/>
+      <text x="${x+barW/2}" y="${h-8}" text-anchor="middle" font-size="9.5" fill="#6b7280">${d.label}</text>
+      <text x="${x+barW/2}" y="${y-6}" text-anchor="middle" font-size="11" font-weight="700" fill="#1f2430">${d.value}</text>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}">${bars}</svg>`;
+}
+function svgDonut(segments, size){
+  size = size || 116;
+  const total = segments.reduce((s,x)=>s+x.value,0) || 1;
+  const r = size/2 - 13, cx=size/2, cy=size/2, circ = 2*Math.PI*r;
+  let offset = 0, circles = '';
+  segments.forEach(seg=>{
+    const frac = seg.value/total;
+    const len = frac*circ;
+    circles += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="15" stroke-dasharray="${len} ${circ-len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += len;
+  });
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#f1f1f3" stroke-width="15"/>
+    ${circles}
+    <text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="17" font-weight="700" fill="#1f2430">${total}</text>
+  </svg>`;
+}
+
+function svgRing(pct, size, color){
+  size = size || 44;
+  const r = size/2-4, cx=size/2, cy=size/2, circ = 2*Math.PI*r;
+  const len = (pct/100)*circ;
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#eef0f3" stroke-width="4"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${len} ${circ-len}" transform="rotate(-90 ${cx} ${cy})"/>
+    <text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="11" font-weight="700" fill="#1f2430">${pct}%</text>
+  </svg>`;
+}
+/* ---------------- VIEW: DASHBOARD ---------------- */
+function showDashboard(){
+  setActiveNav('nav-dashboard');
+  const main = document.getElementById('main');
+
+  const meetings = allMeetings();
+  const nMeetings = meetings.length;
+  const nProjects = state.projects.length;
+  const allT = allTasks();
+  const pendingAll = allT.filter(t=>!t.done);
+  const pendingTasks = pendingAll.filter(t=>t.fecha).sort((a,b)=> new Date(a.fecha)-new Date(b.fecha));
+  const overdueCount = pendingTasks.filter(t=> daysUntil(t.fecha) < 0).length;
+  const urgentTasks = sortTasksByPriority(pendingAll).slice(0,4);
+  const recentMeetings = [...meetings].sort((a,b)=> new Date(b.fecha)-new Date(a.fecha)).slice(0,4);
+
+  const learnings = [];
+  state.projects.forEach(p=>p.meetings.forEach(m=>m.aprendizajes.forEach(a=> learnings.push({text:a.texto, tema:a.tema, proj:p.nombre, fecha:m.fecha}))));
+  learnings.sort((a,b)=> new Date(b.fecha)-new Date(a.fecha));
+  const recentLearnings = learnings.slice(0,4);
+
+  const perProject = state.projects.map(p=>{
+    const pend = p.meetings.flatMap(m=>m.tareas).filter(t=>!t.done).length;
+    const lastLearning = p.meetings.flatMap(m=>m.aprendizajes.map(a=>({a,fecha:m.fecha}))).sort((x,y)=> new Date(y.fecha)-new Date(x.fecha))[0];
+    return {id:p.id, nombre:p.nombre, cliente:p.cliente, reuniones:p.meetings.length, pendientes:pend, ultimoAprendizaje: lastLearning ? lastLearning.a.texto : '—'};
+  });
+
+  // Próximas reuniones (briefing preview) — proyectos con proximaReunion futura
+  const upcoming = [];
+  state.projects.forEach(p=>{
+    const withNext = p.meetings.filter(m=>m.proximaReunion).sort((a,b)=> new Date(b.fecha)-new Date(a.fecha))[0];
+    if(withNext){
+      const open = p.meetings.flatMap(m=>m.tareas).filter(t=>!t.done);
+      const openAccion = open.filter(t=>t.tipo==='accion_propia').length;
+      upcoming.push({id:p.id, nombre:p.nombre, fecha:withNext.proximaReunion, openCount:open.length, openAccion});
+    }
+  });
+  upcoming.sort((a,b)=> new Date(a.fecha)-new Date(b.fecha));
+
+  const accionCount = pendingAll.filter(t=>t.tipo==='accion_propia').length;
+  const esperaCount = pendingAll.filter(t=>t.tipo==='en_espera_terceros').length;
+
+  const colors = ['#4f46e5','#0ea5e9','#f59e0b','#10b981','#ec4899'];
+  const barData = state.projects.map((p,i)=>({label:p.nombre.split(' ')[0], value:p.meetings.length, color:colors[i%colors.length]}));
+
+  main.innerHTML = `
+    <div class="hero-head">
+      <div><h2>Hola, Francisco 👋</h2><p>Así viene tu semana en Project Memory AI.</p></div>
+      <div class="hero-actions">
+        <div class="search-box">🔍<input placeholder="Buscar proyecto o reunión..."></div>
+        <div class="avatar">FM</div>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-tile"><div class="icon-chip chip-indigo">📁</div><div class="num">${nProjects}</div><div class="label">Proyectos</div></div>
+      <div class="kpi-tile"><div class="icon-chip chip-blue">🗒️</div><div class="num">${nMeetings}</div><div class="label">Reuniones subidas</div></div>
+      <div class="kpi-tile"><div class="icon-chip chip-amber">✅</div><div class="num">${pendingAll.length}</div><div class="label">Tareas pendientes</div></div>
+      <div class="kpi-tile ${overdueCount>0?'kpi-alert':''}"><div class="icon-chip chip-red">⏰</div><div class="num">${overdueCount}</div><div class="label">Vencidas</div></div>
+      <div class="kpi-tile"><div class="icon-chip chip-green">📈</div><div class="num">18/30</div><div class="label">Frecuencia de uso<span class="note">dato de ejemplo</span></div></div>
+    </div>
+
+    <div class="chart-row">
+      <div class="card chart-card">
+        <h3>Reuniones por proyecto</h3>
+        ${barData.length ? svgBarChart(barData) : '<p class="empty">Sin datos todavía.</p>'}
+      </div>
+      <div class="card chart-card donut-card">
+        <h3>Tareas pendientes por tipo</h3>
+        ${pendingAll.length ? `
+          <div class="donut-wrap">
+            ${svgDonut([{value:accionCount,color:'#4f46e5'},{value:esperaCount,color:'#a855f7'}])}
+            <div class="donut-legend">
+              <div><span class="dot" style="background:#4f46e5"></span>Acción propia <b>${accionCount}</b></div>
+              <div><span class="dot" style="background:#a855f7"></span>En espera de terceros <b>${esperaCount}</b></div>
+            </div>
+          </div>` : '<p class="empty">Sin tareas pendientes.</p>'}
+      </div>
+    </div>
+
+    <div class="dash-cols">
+      <div class="dash-col attention-col">
+        <h3>⚠️ Qué necesita atención</h3>
+        ${urgentTasks.length ? urgentTasks.map(t=>`
+          <div class="mini-row">
+            <div>${t.fecha?dueBadge(t.fecha):tipoBadge(t.tipo)}</div>
+            <div class="mini-desc"><strong>${t.desc}${temaTag(t.tema)}</strong><span>${t.projectNombre} · ${t.tipo==='en_espera_terceros'?'en espera de terceros':(t.resp||'sin definir')}</span></div>
+          </div>`).join('') : '<p class="empty">Sin tareas pendientes. 🎉</p>'}
+        <a class="link-btn" onclick="showPending()">Ver todas →</a>
+      </div>
+
+      <div class="dash-col">
+        <h3>📚 Aprendizajes recientes</h3>
+        ${recentLearnings.length ? recentLearnings.map(l=>`
+          <div class="mini-row">
+            <div class="mini-desc"><span>${l.proj}</span><strong style="font-weight:400">${l.text}${temaTag(l.tema)}</strong></div>
+          </div>`).join('') : '<p class="empty">Sin aprendizajes registrados todavía.</p>'}
+      </div>
+
+      <div class="dash-col">
+        <h3>📅 Próximas reuniones</h3>
+        ${upcoming.length ? upcoming.map(u=>`
+          <div class="mini-row">
+            <div class="mini-date">${fmtDate(u.fecha)}</div>
+            <div class="mini-desc"><strong><a class="link-btn" onclick="showProjectDetail('${u.id}')" style="font-size:15px">${u.nombre}</a></strong><span>${u.openCount} compromiso${u.openCount!==1?'s':''} abierto${u.openCount!==1?'s':''}${u.openAccion?` · ${u.openAccion} a cargo tuyo`:''}</span></div>
+          </div>`).join('') : '<p class="empty">Ninguna reunión menciona cuándo es la próxima.</p>'}
+      </div>
+    </div>
+
+    <h3 style="margin:26px 0 10px;font-size:16px">Progreso por proyecto</h3>
+    <div class="progress-list">
+      ${state.projects.map((p,i)=>{
+        const allPT = p.meetings.flatMap(m=>m.tareas);
+        const doneCount = allPT.filter(t=>t.done).length;
+        const pend = allPT.length - doneCount;
+        const pct = allPT.length ? Math.round(doneCount/allPT.length*100) : 0;
+        const c = colors[i%colors.length];
+        return `
+        <div class="progress-item">
+          <div class="progress-avatar" style="background:${c}22;color:${c}">${p.nombre.charAt(0)}</div>
+          <div class="progress-info">
+            <a class="link-btn proj-table-link" onclick="showProjectDetail('${p.id}')" style="font-size:15.5px">${p.nombre}</a>
+            <span>${p.cliente||'Sin cliente'} · ${p.meetings.length} reunión${p.meetings.length!==1?'es':''}</span>
+          </div>
+          <div class="progress-stat">${pend} pendiente${pend!==1?'s':''}</div>
+          ${svgRing(pct, 44, c)}
+        </div>`;
+      }).join('') || '<p class="empty">Todavía no creaste ningún proyecto.</p>'}
+    </div>
+  `;
+}
+
+/* ---------------- MODAL HELPERS ---------------- */
+function showOverlay(html){
+  const div = document.createElement('div');
+  div.className = 'overlay'; div.id = 'overlay';
+  div.innerHTML = html;
+  div.addEventListener('click', e=>{ if(e.target.id==='overlay') closeOverlay(); });
+  document.body.appendChild(div);
+}
+function closeOverlay(){
+  const el = document.getElementById('overlay');
+  if(el) el.remove();
+}
+</script>
+</body>
+</html>
