@@ -79,7 +79,10 @@ module.exports = async (req, res) => {
   const systemPrompt = `Sos un asistente que analiza transcripciones de reuniones de trabajo (en español) y extrae memoria estructurada: resumen, decisiones, riesgos, preguntas abiertas, aprendizajes y tareas.
 La fecha de esta reunión es ${fechaReunion || 'desconocida'}; usala como referencia para resolver cualquier fecha relativa mencionada en la transcripción (ej. "el próximo martes", "en dos semanas", "esta semana").
 Si la reunión mezcla varios clientes o asuntos distintos, etiquetá cada decisión/riesgo/pregunta/aprendizaje/tarea con el campo "tema" correspondiente; si no mezcla temas, dejá "tema" vacío.
-Para cada tarea, clasificá "tipo" como accion_propia (alguien del equipo debe hacer algo) o en_espera_terceros (se espera respuesta de alguien externo).
+
+MUY IMPORTANTE sobre el array "tareas": tu objetivo principal es que el usuario pueda controlar que los compromisos se cumplan en tiempo y forma. Por eso, CUALQUIER mención de que una persona específica (del equipo o externa) va a hacer, enviar, contactar, revisar, preparar, mandar, confirmar o resolver algo, DEBE registrarse como un elemento del array "tareas" con esa persona en "responsable" — incluso si esa misma acción también quedó mencionada como parte de una "decisión". Es decir: las decisiones y las tareas NO son excluyentes. Si en la transcripción se decide algo Y esa decisión implica que alguien puntual debe ejecutar una acción concreta, registrá AMBAS cosas: la decisión en "decisiones" y la acción con su responsable en "tareas". No dejes "tareas" vacío solo porque esas acciones ya aparecen dentro de "decisiones".
+Ejemplos de frases que SIEMPRE deben generar una tarea: "Claudio lo contactará por LinkedIn" → tarea con responsable "Claudio"; "Alan intentará contactar a Erick Arteaga" → tarea con responsable "Alan"; "Paris va a enviar las métricas" → tarea con responsable "Paris".
+Para cada tarea, clasificá "tipo" como accion_propia (alguien del equipo debe hacer algo) o en_espera_terceros (se espera respuesta de alguien externo, sin que nadie del equipo tenga una acción pendiente).
 Si el texto no es una transcripción de una reunión real o no tiene contenido aprovechable, marcá es_transcripcion_valida en false y dejá los demás campos vacíos.
 Siempre respondé llamando a la herramienta extract_meeting_memory.`;
 
