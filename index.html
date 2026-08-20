@@ -179,13 +179,13 @@
   .mini-row:last-child{border-bottom:none;}
   .mini-desc strong{display:block;font-size:15px;font-weight:600;}
   .mini-desc span{color:var(--muted);font-size:13px;}
-  .mini-date{color:var(--muted);font-size:13px;white-space:nowrap;width:60px;flex-shrink:0;}
+  .mini-date{color:var(--muted);font-size:13px;white-space:nowrap;flex-shrink:0;margin-right:4px;}
   .proj-table-link{font-weight:600;}
 </style>
 </head>
 <body>
 
-<div class="banner">🧪 <b>Login y datos ya son reales (Supabase).</b> La extracción con Claude y el envío automático de emails todavía están simulados en este archivo.</div>
+<div class="banner">🧪 <b>Login, datos y extracción con Claude ya son reales.</b> El envío automático de emails todavía está simulado (botón "Vista previa de alerta").</div>
 
 <!-- LOGIN -->
 <div id="view-login">
@@ -510,14 +510,16 @@ async function toggleTask(meetingId, taskId){
   if(wasOpen) document.getElementById('meeting-'+meetingId).classList.add('open');
 }
 
-/* ---- Subir transcripción (simulado) ---- */
+/* ---- Subir transcripción (real, vía Claude) ---- */
 function openUploadModal(projectId){
+  const todayISO = new Date().toISOString().slice(0,10);
   showOverlay(`
     <div class="modal">
       <h3>Subir transcripción</h3>
-      <p class="sub">Simulación — no se envía nada a Claude todavía. Se agrega una reunión de ejemplo para mostrar el flujo.</p>
+      <p class="sub">El archivo se envía a Claude para extraer resumen, decisiones, tareas, riesgos, preguntas abiertas y aprendizajes. Por ahora solo se admite formato .txt.</p>
       <div class="field"><label>Nombre de la reunión</label><input id="up-nombre" placeholder="Ej. Reunión de avance semanal"></div>
-      <div class="field"><label>Archivo (.txt o .docx)</label><input type="file" id="up-file" accept=".txt,.docx"></div>
+      <div class="field"><label>Fecha de la reunión</label><input type="date" id="up-fecha" value="${todayISO}"></div>
+      <div class="field"><label>Archivo (.txt)</label><input type="file" id="up-file" accept=".txt"></div>
       <div id="up-status"></div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="closeOverlay()">Cancelar</button>
@@ -526,26 +528,84 @@ function openUploadModal(projectId){
     </div>
   `);
 }
+function readFileAsText(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+}
 async function processUpload(projectId){
   const nombre = document.getElementById('up-nombre').value.trim() || 'Nueva reunión';
-  document.getElementById('up-status').innerHTML = `<p style="font-size:14.5px;color:#6b7280;margin-top:10px"><span class="spinner"></span>Procesando (simulado)…</p>`;
-  const todayISO = new Date().toISOString().slice(0,10);
+  const fechaReunion = document.getElementById('up-fecha').value || new Date().toISOString().slice(0,10);
+  const fileInput = document.getElementById('up-file');
+  const file = fileInput.files[0];
+  const statusEl = document.getElementById('up-status');
+  if(!file){ statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">Elegí un archivo .txt primero.</p>`; return; }
+
+  statusEl.innerHTML = `<p style="font-size:14.5px;color:#6b7280;margin-top:10px"><span class="spinner"></span>Leyendo el archivo…</p>`;
+  let transcript;
+  try{
+    transcript = await readFileAsText(file);
+  }catch(e){
+    statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">No se pudo leer el archivo: ${e.message}</p>`;
+    return;
+  }
+
+  statusEl.innerHTML = `<p style="font-size:14.5px;color:#6b7280;margin-top:10px"><span class="spinner"></span>Analizando la transcripción con Claude… puede tardar hasta 1 minuto.</p>`;
+  let result;
+  try{
+    const resp = await fetch('/api/extract', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ transcript, fechaReunion })
+    });
+    result = await resp.json();
+    if(!resp.ok){
+      statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">Error al procesar: ${result.error || 'error desconocido'}</p>`;
+      return;
+    }
+  }catch(e){
+    statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">No se pudo conectar con el servicio de análisis: ${e.message}</p>`;
+    return;
+  }
+
+  if(!result.es_transcripcion_valida){
+    statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">El archivo no parece ser una transcripción de reunión válida, o no se pudo extraer contenido útil. No se guardó nada.</p>`;
+    return;
+  }
+
+  const cleanItems = (arr) => (arr||[]).map(x=>({ texto: x.texto, tema: x.tema && x.tema.trim() ? x.tema.trim() : null }));
+
   const { data: meeting, error } = await supabaseClient.from('meetings').insert({
-    project_id: projectId, nombre, fecha_reunion: todayISO,
-    resumen: '(Ejemplo) Resumen generado automáticamente a partir de la transcripción subida.',
-    decisiones: [{texto:'(Ejemplo) Decisión identificada en la reunión.', tema:null}],
-    riesgos: [{texto:'(Ejemplo) Riesgo identificado en la reunión.', tema:null}],
-    preguntas_abiertas: [{texto:'(Ejemplo) Pregunta que quedó sin resolver.', tema:null}],
-    aprendizajes: [{texto:'(Ejemplo) Aprendizaje registrado.', tema:null}]
+    project_id: projectId, nombre, fecha_reunion: fechaReunion,
+    proxima_reunion: result.proxima_reunion && result.proxima_reunion.trim() ? result.proxima_reunion.trim() : null,
+    archivo_nombre: file.name,
+    resumen: result.resumen || '',
+    decisiones: cleanItems(result.decisiones),
+    riesgos: cleanItems(result.riesgos),
+    preguntas_abiertas: cleanItems(result.preguntas_abiertas),
+    aprendizajes: cleanItems(result.aprendizajes)
   }).select().single();
-  if(error){ toast('Error al procesar: ' + error.message); return; }
-  const { error: taskErr } = await supabaseClient.from('tasks').insert({
-    meeting_id: meeting.id, descripcion: '(Ejemplo) Tarea extraída de la reunión', tipo: 'accion_propia'
-  });
-  if(taskErr){ toast('Error al crear la tarea: ' + taskErr.message); return; }
+  if(error){ statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">Error al guardar la reunión: ${error.message}</p>`; return; }
+
+  const tareas = (result.tareas || []).map(t => ({
+    meeting_id: meeting.id,
+    descripcion: t.descripcion,
+    tema: t.tema && t.tema.trim() ? t.tema.trim() : null,
+    tipo: t.tipo === 'en_espera_terceros' ? 'en_espera_terceros' : 'accion_propia',
+    responsable: t.responsable && t.responsable.trim() ? t.responsable.trim() : null,
+    fecha_vencimiento: t.fecha_vencimiento && t.fecha_vencimiento.trim() ? t.fecha_vencimiento.trim() : null
+  }));
+  if(tareas.length){
+    const { error: taskErr } = await supabaseClient.from('tasks').insert(tareas);
+    if(taskErr){ statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">La reunión se guardó, pero hubo un error al guardar las tareas: ${taskErr.message}</p>`; return; }
+  }
+
   await fetchAllData();
   closeOverlay(); showProjectDetail(projectId);
-  toast('Transcripción procesada (contenido simulado — Claude todavía no está conectado).');
+  toast('Transcripción procesada con Claude y guardada.');
 }
 
 /* ---- Vista previa de alerta ---- */
