@@ -212,6 +212,7 @@
     <div class="nav-item" id="nav-dashboard" onclick="showDashboard()">🏠 Inicio</div>
     <div class="nav-item" id="nav-projects" onclick="showProjects()">📁 Proyectos</div>
     <div class="nav-item" id="nav-pending" onclick="showPending()">✅ Tareas pendientes</div>
+    <div class="nav-item" id="nav-team" onclick="showTeam()">👥 Equipo</div>
     <div class="sidebar-foot">
       <a class="logout-link" onclick="doLogout()">Cerrar sesión</a>
     </div>
@@ -232,7 +233,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const TODAY = new Date();
 TODAY.setHours(0,0,0,0);
 
-let state = { projects: [] };
+let state = { projects: [], contacts: [] };
 let currentUser = null;
 
 async function fetchAllData(){
@@ -259,6 +260,17 @@ async function fetchAllData(){
       }))
     }))
   }));
+
+  const { data: contactsData, error: contactsErr } = await supabaseClient
+    .from('contacts').select('id, nombre, rol, empresa').order('created_at', { ascending: true });
+  if(contactsErr){ console.error(contactsErr); }
+  state.contacts = contactsData || [];
+}
+
+function findContact(nombre){
+  if(!nombre) return null;
+  const n = nombre.trim().toLowerCase();
+  return state.contacts.find(c => c.nombre.trim().toLowerCase() === n) || null;
 }
 
 /* ---------------- NAV / AUTH ---------------- */
@@ -406,16 +418,14 @@ function showProjectDetail(id){
   const meetingsHtml = [...p.meetings].sort((a,b)=> new Date(b.fecha)-new Date(a.fecha)).map(m => renderMeeting(m, p.id)).join('')
     || '<div class="empty">Todavía no subiste ninguna transcripción a este proyecto.</div>';
 
-  const learnings = [];
-  p.meetings.forEach(m => m.aprendizajes.forEach(a => learnings.push({text:a.texto, tema:a.tema, meeting:m.nombre, fecha:m.fecha})));
-  learnings.sort((a,b)=> new Date(b.fecha)-new Date(a.fecha));
-  const learningsHtml = learnings.length ? `
+  const assignedTasks = sortTasksByPriority(p.meetings.flatMap(m => m.tareas.filter(t=>!t.done).map(t => ({...t, meeting:m.nombre}))));
+  const assignedTasksHtml = `
     <div class="card" style="margin-bottom:18px">
-      <h3 style="margin:0 0 10px;font-size:16px">📚 Aprendizajes de este proyecto</h3>
-      <ul style="margin:0;padding-left:18px;font-size:15.5px;line-height:1.7">
-        ${learnings.map(l=>`<li>${l.text}${temaTag(l.tema)} <span style="color:#9ca3af;font-size:13px">— ${l.meeting}, ${fmtDate(l.fecha)}</span></li>`).join('')}
-      </ul>
-    </div>` : '';
+      <h3 style="margin:0 0 10px;font-size:16px">✅ Tareas asignadas</h3>
+      ${assignedTasks.length ? `<ul style="margin:0;padding-left:18px;font-size:15.5px;line-height:1.7">
+        ${assignedTasks.map(t=>`<li>${t.desc}${temaTag(t.tema)} — ${tipoBadge(t.tipo)} ${t.resp?`· ${t.resp}`:'· sin responsable definido'} ${t.fecha?dueBadge(t.fecha):''} <span style="color:#9ca3af;font-size:13px">— ${t.meeting}</span></li>`).join('')}
+      </ul>` : '<p style="margin:0;font-size:15px;color:var(--muted)">No hay tareas pendientes. 🎉</p>'}
+    </div>`;
 
   // Briefing pre-reunión: usamos la próxima reunión mencionada en la reunión más reciente que la tenga
   const withNext = p.meetings.filter(m=>m.proximaReunion).sort((a,b)=> new Date(b.fecha)-new Date(a.fecha));
@@ -443,7 +453,7 @@ function showProjectDetail(id){
       <button class="btn" onclick="openUploadModal('${p.id}')">⬆ Subir transcripción</button>
     </div>
     ${briefingHtml}
-    ${learningsHtml}
+    ${assignedTasksHtml}
     <div id="meetings-list">${meetingsHtml}</div>
   `;
 }
@@ -576,6 +586,62 @@ async function processUpload(projectId){
     return;
   }
 
+  // ¿Es reunión con cliente? (el proyecto tiene un cliente cargado)
+  const project = state.projects.find(x=>x.id===projectId);
+  const esReunionCliente = !!(project && project.cliente && project.cliente.trim());
+
+  if(esReunionCliente){
+    const nombresEnTareas = [...new Set((result.tareas||[]).map(t=>t.responsable).filter(x=>x && x.trim()).map(x=>x.trim()))];
+    const desconocidos = nombresEnTareas.filter(n => !findContact(n));
+    if(desconocidos.length){
+      showRoleModal(projectId, nombre, fechaReunion, file, result, desconocidos);
+      return;
+    }
+  }
+
+  await saveMeetingResult(projectId, nombre, fechaReunion, file, result, {});
+}
+
+function showRoleModal(projectId, nombre, fechaReunion, file, result, desconocidos){
+  showOverlay(`
+    <div class="modal">
+      <h3>¿Quiénes son?</h3>
+      <p class="sub">Esta reunión es con cliente y aparecieron personas que todavía no conocemos. Contanos su rol (y empresa si corresponde) para guardarlo y no volver a preguntar.</p>
+      ${desconocidos.map((n,i)=>`
+        <div class="field">
+          <label>${n}</label>
+          <input id="role-rol-${i}" placeholder="Rol (ej. CFO, Tesorero)">
+          <input id="role-empresa-${i}" placeholder="Empresa (opcional)" style="margin-top:6px">
+        </div>`).join('')}
+      <div id="role-status"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeOverlay()">Cancelar</button>
+        <button class="btn" onclick="submitRoles()">Guardar y continuar</button>
+      </div>
+    </div>
+  `);
+  window.__pendingUpload = { projectId, nombre, fechaReunion, file, result, desconocidos };
+}
+
+async function submitRoles(){
+  const pending = window.__pendingUpload;
+  if(!pending){ closeOverlay(); return; }
+  const statusEl = document.getElementById('role-status');
+  const nuevosContactos = pending.desconocidos.map((n,i) => ({
+    nombre: n,
+    rol: (document.getElementById('role-rol-'+i).value || '').trim() || null,
+    empresa: (document.getElementById('role-empresa-'+i).value || '').trim() || null
+  }));
+  if(nuevosContactos.length){
+    const { error } = await supabaseClient.from('contacts').insert(nuevosContactos);
+    if(error){ statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">Error al guardar los contactos: ${error.message}</p>`; return; }
+  }
+  await saveMeetingResult(pending.projectId, pending.nombre, pending.fechaReunion, pending.file, pending.result, {});
+  window.__pendingUpload = null;
+}
+
+async function saveMeetingResult(projectId, nombre, fechaReunion, file, result, opts){
+  const statusEl = document.getElementById('up-status') || document.getElementById('role-status');
   const cleanItems = (arr) => (arr||[]).map(x=>({ texto: x.texto, tema: x.tema && x.tema.trim() ? x.tema.trim() : null }));
 
   const { data: meeting, error } = await supabaseClient.from('meetings').insert({
@@ -588,7 +654,7 @@ async function processUpload(projectId){
     preguntas_abiertas: cleanItems(result.preguntas_abiertas),
     aprendizajes: cleanItems(result.aprendizajes)
   }).select().single();
-  if(error){ statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">Error al guardar la reunión: ${error.message}</p>`; return; }
+  if(error){ if(statusEl) statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">Error al guardar la reunión: ${error.message}</p>`; return; }
 
   const tareas = (result.tareas || []).map(t => ({
     meeting_id: meeting.id,
@@ -600,7 +666,7 @@ async function processUpload(projectId){
   }));
   if(tareas.length){
     const { error: taskErr } = await supabaseClient.from('tasks').insert(tareas);
-    if(taskErr){ statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">La reunión se guardó, pero hubo un error al guardar las tareas: ${taskErr.message}</p>`; return; }
+    if(taskErr){ if(statusEl) statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">La reunión se guardó, pero hubo un error al guardar las tareas: ${taskErr.message}</p>`; return; }
   }
 
   await fetchAllData();
@@ -680,6 +746,54 @@ async function toggleTaskGlobal(projectId, meetingId, taskId){
   t.done = true;
   showPending();
   toast('Tarea marcada como completada.');
+}
+
+/* ---------------- VIEW: EQUIPO ---------------- */
+function showTeam(){
+  setActiveNav('nav-team');
+  const main = document.getElementById('main');
+  const rows = state.contacts.map(c => `
+    <tr>
+      <td><strong>${c.nombre}</strong></td>
+      <td>${c.rol || '<span style="color:#9ca3af">Sin definir</span>'}</td>
+      <td>${c.empresa || '<span style="color:#9ca3af">—</span>'}</td>
+      <td><button class="link-btn" onclick="deleteContact('${c.id}')">Eliminar</button></td>
+    </tr>`).join('');
+  main.innerHTML = `
+    <div class="page-head">
+      <div><h2>Equipo</h2><p>Personas internas que el sistema ya reconoce en las reuniones internas (sin cliente asociado). En reuniones con cliente, si aparece alguien nuevo te va a preguntar su rol y se guarda acá también.</p></div>
+    </div>
+    <div class="card" style="margin-bottom:18px">
+      <h3 style="margin:0 0 10px;font-size:16px">Agregar persona</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <input id="team-nombre" placeholder="Nombre" style="flex:1;min-width:160px">
+        <input id="team-rol" placeholder="Rol (ej. Marketing, Comercial)" style="flex:1;min-width:160px">
+        <input id="team-empresa" placeholder="Empresa (opcional, para contactos externos)" style="flex:1;min-width:160px">
+        <button class="btn" onclick="addContactFromForm()">+ Agregar</button>
+      </div>
+    </div>
+    <table class="tasks">
+      <thead><tr><th>Nombre</th><th>Rol</th><th>Empresa</th><th></th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="4"><div class="empty">Todavía no cargaste a nadie.</div></td></tr>'}</tbody>
+    </table>
+  `;
+}
+async function addContactFromForm(){
+  const nombre = document.getElementById('team-nombre').value.trim();
+  const rol = document.getElementById('team-rol').value.trim();
+  const empresa = document.getElementById('team-empresa').value.trim();
+  if(!nombre){ toast('Escribí un nombre.'); return; }
+  const { error } = await supabaseClient.from('contacts').insert({ nombre, rol: rol || null, empresa: empresa || null });
+  if(error){ toast('Error al guardar: ' + error.message); return; }
+  await fetchAllData();
+  showTeam();
+  toast('Persona agregada.');
+}
+async function deleteContact(id){
+  const { error } = await supabaseClient.from('contacts').delete().eq('id', id);
+  if(error){ toast('Error al eliminar: ' + error.message); return; }
+  await fetchAllData();
+  showTeam();
 }
 
 /* ---------------- MINI CHARTS (SVG, sin dependencias) ---------------- */
