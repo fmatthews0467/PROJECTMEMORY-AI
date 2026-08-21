@@ -336,7 +336,7 @@ function dueBadge(fecha){
 function tipoBadge(tipo){
   return tipo==='en_espera_terceros'
     ? '<span class="badge badge-espera">En espera de terceros</span>'
-    : '<span class="badge badge-accion">Acción propia</span>';
+    : '<span class="badge badge-accion">Responsable</span>';
 }
 function temaTag(tema){
   return tema ? `<span class="tema-tag">${tema}</span>` : '';
@@ -433,13 +433,25 @@ function showProjectDetail(id){
   let briefingHtml = '';
   if(nextMeeting){
     const openTasks = sortTasksByPriority(p.meetings.flatMap(m=>m.tareas).filter(t=>!t.done));
+    const openQuestions = p.meetings.flatMap(m=>(m.preguntas||[]).filter(q=>!q.resuelta))
+      .sort((a,b)=>{
+        if(a.fecha && b.fecha) return new Date(a.fecha)-new Date(b.fecha);
+        if(a.fecha) return -1;
+        if(b.fecha) return 1;
+        return 0;
+      });
     briefingHtml = `
       <div class="card" style="margin-bottom:18px;border-color:var(--accent);background:var(--accent-soft)">
         <h3 style="margin:0 0 4px;font-size:16px;color:var(--accent)">📅 Próxima reunión: ${fmtDate(nextMeeting.proximaReunion)}</h3>
-        <p style="margin:0 0 10px;font-size:14.5px;color:var(--muted)">Compromisos abiertos para llegar preparado — acción propia primero.</p>
-        ${openTasks.length ? `<ul style="margin:0;padding-left:18px;font-size:15px;line-height:1.7">
+        <p style="margin:0 0 10px;font-size:14.5px;color:var(--muted)">Compromisos abiertos para llegar preparado — responsables primero.</p>
+        ${openTasks.length ? `<ul style="margin:0 0 12px;padding-left:18px;font-size:15px;line-height:1.7">
           ${openTasks.map(t=>`<li>${t.desc}${temaTag(t.tema)} — ${tipoBadge(t.tipo)} ${t.fecha?dueBadge(t.fecha):''}</li>`).join('')}
-        </ul>` : '<p style="margin:0;font-size:15px;color:var(--muted)">No hay compromisos abiertos. 🎉</p>'}
+        </ul>` : '<p style="margin:0 0 12px;font-size:15px;color:var(--muted)">No hay compromisos abiertos. 🎉</p>'}
+        ${openQuestions.length ? `
+          <p style="margin:0 0 6px;font-size:14px;font-weight:600;color:var(--accent)">Preguntas por resolver</p>
+          <ul style="margin:0;padding-left:18px;font-size:15px;line-height:1.7">
+            ${openQuestions.map(q=>`<li>${q.texto}${temaTag(q.tema)} ${q.responsable?`— ${q.responsable}`:'— sin responsable definido'} ${q.fecha?dueBadge(q.fecha):''}</li>`).join('')}
+          </ul>` : ''}
       </div>`;
   }
 
@@ -472,6 +484,14 @@ function renderMeeting(m, projectId){
 
   const list = (arr) => arr.length ? `<ul>${arr.map(x=>`<li>${x.texto}${temaTag(x.tema)}</li>`).join('')}</ul>` : '<p style="color:#9ca3af">— Ninguno.</p>';
 
+  const preguntasRows = (m.preguntas||[]).map((q, idx) => `
+    <tr>
+      <td><input type="checkbox" ${q.resuelta?'checked':''} onchange="toggleQuestion('${m.id}',${idx})"></td>
+      <td style="${q.resuelta?'text-decoration:line-through;color:#9ca3af':''}">${q.texto}${temaTag(q.tema)}</td>
+      <td><input class="inline-edit" type="text" placeholder="Sin definir" value="${q.responsable||''}" onchange="updateQuestionField('${projectId}','${m.id}',${idx},'responsable',this.value)"></td>
+      <td>${q.resuelta ? '<span class="badge badge-done">Resuelta</span>' : (q.fecha ? dueBadge(q.fecha) : `<input class="inline-edit" type="date" value="" onchange="updateQuestionField('${projectId}','${m.id}',${idx},'fecha',this.value)">`)}</td>
+    </tr>`).join('');
+
   return `
     <div class="meeting" id="meeting-${m.id}">
       <div class="meeting-head" onclick="toggleMeeting('${m.id}')">
@@ -488,7 +508,12 @@ function renderMeeting(m, projectId){
           </table>
         </div>
         <div class="cat"><h5>Riesgos</h5>${list(m.riesgos)}</div>
-        <div class="cat"><h5>Preguntas abiertas</h5>${list(m.preguntas)}</div>
+        <div class="cat"><h5>Preguntas abiertas</h5>
+          <table class="tasks">
+            <thead><tr><th></th><th>Pregunta</th><th>Responsable</th><th>Fecha para resolver</th></tr></thead>
+            <tbody>${preguntasRows || '<tr><td colspan="4" style="color:#9ca3af">Sin preguntas abiertas.</td></tr>'}</tbody>
+          </table>
+        </div>
         <div class="cat"><h5>Aprendizajes</h5>${list(m.aprendizajes)}</div>
       </div>
     </div>`;
@@ -506,6 +531,25 @@ async function updateTaskField(projectId, meetingId, taskId, field, value){
 
 function toggleMeeting(id){
   document.getElementById('meeting-'+id).classList.toggle('open');
+}
+async function toggleQuestion(meetingId, idx){
+  const p = state.projects.find(x=>x.meetings.some(m=>m.id===meetingId));
+  const m = p.meetings.find(x=>x.id===meetingId);
+  const preguntas = m.preguntas.map((q,i)=> i===idx ? {...q, resuelta: !q.resuelta} : q);
+  const { error } = await supabaseClient.from('meetings').update({ preguntas_abiertas: preguntas }).eq('id', meetingId);
+  if(error){ toast('Error al guardar: ' + error.message); return; }
+  m.preguntas = preguntas;
+  const wasOpen = document.getElementById('meeting-'+meetingId).classList.contains('open');
+  showProjectDetail(p.id);
+  if(wasOpen) document.getElementById('meeting-'+meetingId).classList.add('open');
+}
+async function updateQuestionField(projectId, meetingId, idx, field, value){
+  const p = state.projects.find(x=>x.id===projectId);
+  const m = p.meetings.find(x=>x.id===meetingId);
+  const preguntas = m.preguntas.map((q,i)=> i===idx ? {...q, [field]: value || null} : q);
+  const { error } = await supabaseClient.from('meetings').update({ preguntas_abiertas: preguntas }).eq('id', meetingId);
+  if(error){ toast('Error al guardar: ' + error.message); return; }
+  m.preguntas = preguntas;
 }
 async function toggleTask(meetingId, taskId){
   const p = state.projects.find(x=>x.id===currentProjectId);
@@ -643,6 +687,13 @@ async function submitRoles(){
 async function saveMeetingResult(projectId, nombre, fechaReunion, file, result, opts){
   const statusEl = document.getElementById('up-status') || document.getElementById('role-status');
   const cleanItems = (arr) => (arr||[]).map(x=>({ texto: x.texto, tema: x.tema && x.tema.trim() ? x.tema.trim() : null }));
+  const cleanQuestions = (arr) => (arr||[]).map(x=>({
+    texto: x.texto,
+    tema: x.tema && x.tema.trim() ? x.tema.trim() : null,
+    responsable: x.responsable && x.responsable.trim() ? x.responsable.trim() : null,
+    fecha: x.fecha_vencimiento && x.fecha_vencimiento.trim() ? x.fecha_vencimiento.trim() : null,
+    resuelta: false
+  }));
 
   const { data: meeting, error } = await supabaseClient.from('meetings').insert({
     project_id: projectId, nombre, fecha_reunion: fechaReunion,
@@ -651,7 +702,7 @@ async function saveMeetingResult(projectId, nombre, fechaReunion, file, result, 
     resumen: result.resumen || '',
     decisiones: cleanItems(result.decisiones),
     riesgos: cleanItems(result.riesgos),
-    preguntas_abiertas: cleanItems(result.preguntas_abiertas),
+    preguntas_abiertas: cleanQuestions(result.preguntas_abiertas),
     aprendizajes: cleanItems(result.aprendizajes)
   }).select().single();
   if(error){ if(statusEl) statusEl.innerHTML = `<p style="font-size:14.5px;color:#b91c1c;margin-top:10px">Error al guardar la reunión: ${error.message}</p>`; return; }
@@ -688,7 +739,7 @@ function previewAlert(meetingId, taskId){
         <b>Asunto:</b> Recordatorio — vence pronto: ${t.desc}<br><br>
         Hola,<br><br>
         La tarea <b>"${t.desc}"</b>${t.tema? ` (tema: ${t.tema})`:''} del proyecto <b>${p.nombre}</b> (reunión: ${m.nombre}) vence el <b>${fmtDate(t.fecha)}</b>.<br>
-        Tipo: ${t.tipo==='en_espera_terceros' ? 'en espera de terceros' : 'acción propia'}.<br>
+        Tipo: ${t.tipo==='en_espera_terceros' ? 'en espera de terceros' : 'responsable'}.<br>
         Responsable: ${t.resp || 'sin definir'}.
       </div>
       <div class="sim-note">Simulación. En la versión final, este email se envía automáticamente todos los días a las 10:00 AM (hora de Chile) para tareas que vencen dentro de las próximas 24hs.</div>
@@ -725,7 +776,7 @@ function showPending(){
   }).join('');
   main.innerHTML = `
     <div class="page-head">
-      <div><h2>Tareas pendientes</h2><p>Todos los proyectos, ordenadas por vencimiento. Vencidas primero; a igual fecha, acción propia antes que en espera de terceros.</p></div>
+      <div><h2>Tareas pendientes</h2><p>Todos los proyectos, ordenadas por vencimiento. Vencidas primero; a igual fecha, responsable antes que en espera de terceros.</p></div>
     </div>
     <table class="tasks">
       <thead><tr><th></th><th>Tarea</th><th>Tipo</th><th>Proyecto</th><th>Responsable</th><th>Email</th><th>Vencimiento</th><th></th></tr></thead>
@@ -913,7 +964,7 @@ function showDashboard(){
           <div class="donut-wrap">
             ${svgDonut([{value:accionCount,color:'#4f46e5'},{value:esperaCount,color:'#a855f7'}])}
             <div class="donut-legend">
-              <div><span class="dot" style="background:#4f46e5"></span>Acción propia <b>${accionCount}</b></div>
+              <div><span class="dot" style="background:#4f46e5"></span>Responsable <b>${accionCount}</b></div>
               <div><span class="dot" style="background:#a855f7"></span>En espera de terceros <b>${esperaCount}</b></div>
             </div>
           </div>` : '<p class="empty">Sin tareas pendientes.</p>'}
