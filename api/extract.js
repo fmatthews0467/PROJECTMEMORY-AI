@@ -26,7 +26,16 @@ const TOOL = {
       },
       preguntas_abiertas: {
         type: 'array',
-        items: { type: 'object', properties: { texto: { type: 'string' }, tema: { type: 'string' } }, required: ['texto'] }
+        items: {
+          type: 'object',
+          properties: {
+            texto: { type: 'string' },
+            tema: { type: 'string' },
+            responsable: { type: 'string', description: 'Si la transcripción menciona quién debe resolver o responder esta pregunta antes de la próxima reunión, poné su nombre acá. Vacío si no se menciona a nadie puntual.' },
+            fecha_vencimiento: { type: 'string', description: 'Fecha ISO YYYY-MM-DD para cuando debería estar resuelta esta pregunta, si se menciona (incluso de forma relativa). Vacío si no se menciona ninguna fecha.' }
+          },
+          required: ['texto']
+        }
       },
       aprendizajes: {
         type: 'array',
@@ -83,6 +92,8 @@ Si la reunión mezcla varios clientes o asuntos distintos, etiquetá cada decisi
 MUY IMPORTANTE sobre el array "tareas": tu objetivo principal es que el usuario pueda controlar que los compromisos se cumplan en tiempo y forma. Por eso, CUALQUIER mención de que una persona específica (del equipo o externa) va a hacer, enviar, contactar, revisar, preparar, mandar, confirmar o resolver algo, DEBE registrarse como un elemento del array "tareas" con esa persona en "responsable" — incluso si esa misma acción también quedó mencionada como parte de una "decisión". Es decir: las decisiones y las tareas NO son excluyentes. Si en la transcripción se decide algo Y esa decisión implica que alguien puntual debe ejecutar una acción concreta, registrá AMBAS cosas: la decisión en "decisiones" y la acción con su responsable en "tareas". No dejes "tareas" vacío solo porque esas acciones ya aparecen dentro de "decisiones".
 Ejemplos de frases que SIEMPRE deben generar una tarea: "Claudio lo contactará por LinkedIn" → tarea con responsable "Claudio"; "Alan intentará contactar a Erick Arteaga" → tarea con responsable "Alan"; "Paris va a enviar las métricas" → tarea con responsable "Paris".
 Para cada tarea, clasificá "tipo" como accion_propia (alguien del equipo debe hacer algo) o en_espera_terceros (se espera respuesta de alguien externo, sin que nadie del equipo tenga una acción pendiente).
+
+Sobre "preguntas_abiertas": el usuario necesita poder ir cerrando estas dudas antes de la próxima reunión. Por eso, si la transcripción deja claro quién debe averiguar o responder una pregunta puntual (y para cuándo), completá "responsable" y "fecha_vencimiento" en esa pregunta, igual que hacés con las tareas. Si no se menciona nadie puntual, dejá esos dos campos vacíos — está bien que muchas preguntas abiertas no tengan responsable.
 Si el texto no es una transcripción de una reunión real o no tiene contenido aprovechable, marcá es_transcripcion_valida en false y dejá los demás campos vacíos.
 Siempre respondé llamando a la herramienta extract_meeting_memory.`;
 
